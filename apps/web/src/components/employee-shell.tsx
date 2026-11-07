@@ -1,10 +1,10 @@
-import { ChevronRight, LogOut, MessageSquare, UserRound } from "lucide-react";
+import { ChevronRight, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { logout } from "@/app/login/actions";
 import type { User } from "@/lib/types";
 import { staffNav } from "./staff-shell";
 import { NexoMark } from "./nexo-mark";
-import { Avatar, cx } from "./ui";
+import { LogoutButton, ProfileShortcut, SidebarAccount } from "./sidebar-account";
+import { cx } from "./ui";
 
 export function EmployeeShell({
   user,
@@ -21,8 +21,7 @@ export function EmployeeShell({
   const nav = [
     { href: "/chat", key: "chat", label: "Atendimento", Icon: MessageSquare },
     // Telas extras liberadas por permissão (ex.: relatórios concedidos a um funcionário).
-    ...staffNav(user).filter((i) => i.key !== "profile"),
-    { href: "/perfil", key: "perfil", label: "Meu perfil", Icon: UserRound },
+    ...staffNav(user),
   ];
 
   return (
@@ -49,19 +48,7 @@ export function EmployeeShell({
           ))}
         </nav>
         <div className="flex-1" />
-        <div className="flex items-center gap-2.5 border-t border-rule px-2 pt-3.5 pb-1">
-          <Avatar initials={user.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={user.avatarUrl} />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
-            <span className="truncate text-[11.5px] text-ink-3">{user.email}</span>
-          </span>
-        </div>
-        <form action={logout}>
-          <button className="flex h-[34px] w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-            <LogOut size={16} className="text-ink-3" />
-            Sair
-          </button>
-        </form>
+        <SidebarAccount user={user} active={active === "perfil"} />
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
@@ -72,11 +59,10 @@ export function EmployeeShell({
             <span className="font-semibold">{active === "chat" ? "Atendimento" : "Meu perfil"}</span>
           </div>
           {aside}
-          <form action={logout} className="md:hidden">
-            <button aria-label="Sair" className="grid size-9 place-items-center rounded-full text-ink-2 hover:bg-desk">
-              <LogOut size={16} />
-            </button>
-          </form>
+          <div className="flex items-center gap-1 md:hidden">
+            <ProfileShortcut user={user} />
+            <LogoutButton compact />
+          </div>
         </header>
         {children}
       </main>

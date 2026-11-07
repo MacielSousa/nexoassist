@@ -1,9 +1,9 @@
-import { BarChart3, Headset, LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
+import { BarChart3, Headset, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
-import { logout } from "@/app/login/actions";
 import { can, type User } from "@/lib/types";
 import { NexoMark } from "./nexo-mark";
-import { Avatar, cx } from "./ui";
+import { ProfileShortcut, SidebarAccount } from "./sidebar-account";
+import { cx } from "./ui";
 
 export type StaffSection = "console" | "reports" | "users" | "roles" | "profile";
 
@@ -14,7 +14,6 @@ export function staffNav(user: User) {
     can(user, "reports.view") && { key: "reports" as const, href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
     can(user, "users.view", "users.manage") && { key: "users" as const, href: "/admin/usuarios", label: "Usuários", Icon: Users },
     can(user, "roles.manage") && { key: "roles" as const, href: "/admin/roles", label: "Roles", Icon: ShieldCheck },
-    { key: "profile" as const, href: "/perfil", label: "Meu perfil", Icon: UserRound },
   ];
   return items.filter((i) => i !== false);
 }
@@ -45,18 +44,7 @@ export function StaffShell({ user, active, children }: { user: User; active: Sta
           ))}
         </nav>
         <div className="flex-1" />
-        <div className="flex items-center gap-2.5 border-t border-rule px-2 pt-3.5 pb-1">
-          <Avatar initials={user.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={user.avatarUrl} />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
-            <span className="truncate text-[11.5px] text-ink-3">{user.email}</span>
-          </span>
-        </div>
-        <form action={logout}>
-          <button className="flex h-[34px] w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-            <LogOut size={16} className="text-ink-3" /> Sair
-          </button>
-        </form>
+        <SidebarAccount user={user} active={active === "profile"} />
       </aside>
 
       {/* Menu compacto em telas pequenas */}
@@ -66,6 +54,9 @@ export function StaffShell({ user, active, children }: { user: User; active: Sta
             <Icon size={18} /> {label}
           </Link>
         ))}
+        <Link href="/perfil" className={cx("flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[11px]", active === "profile" ? "text-primary-text" : "text-ink-3")}>
+          <ProfileShortcut user={user} asSpan /> Perfil
+        </Link>
       </nav>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto pb-14 md:pb-0">{children}</main>
