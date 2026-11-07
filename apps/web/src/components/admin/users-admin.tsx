@@ -1,13 +1,11 @@
 "use client";
 
-import { CircleAlert, Headset, LoaderCircle, LogOut, Pencil, Plus, Search, UserRoundCheck, UserRoundX, Users, X } from "lucide-react";
-import Link from "next/link";
+import { CircleAlert, LoaderCircle, Pencil, Plus, Search, UserRoundCheck, UserRoundX, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { logout } from "@/app/login/actions";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABEL, type SupportTeam, type User, type UserRole } from "@/lib/types";
 import { postJson } from "../chat/live";
-import { NexoMark } from "../nexo-mark";
+import { StaffShell } from "../staff-shell";
 import { Avatar, avatarColors, cx, Pill } from "../ui";
 
 type RoleFilter = "all" | UserRole;
@@ -95,36 +93,8 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
   ];
 
   return (
-    <div className="flex h-dvh bg-paper">
-      <aside className="hidden w-[232px] shrink-0 flex-col border-r border-rule px-3.5 pt-5 pb-3.5 md:flex">
-        <div className="flex items-center gap-2.5 px-2">
-          <NexoMark />
-          <span className="text-base font-bold">Nexo Assist</span>
-        </div>
-        <nav className="mt-[22px] flex flex-col gap-0.5">
-          <span className="flex h-9 items-center gap-2.5 rounded-lg bg-primary-soft px-2.5 text-[13.5px] font-semibold text-primary-text">
-            <Users size={16} /> Usuários
-          </span>
-          <Link href="/console" className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-            <Headset size={16} className="text-ink-3" /> Conversas
-          </Link>
-        </nav>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2.5 border-t border-rule px-2 pt-3.5 pb-1">
-          <Avatar initials={admin.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-[13.5px] font-semibold">{admin.name}</span>
-            <span className="truncate text-[11.5px] text-ink-3">{admin.email}</span>
-          </span>
-        </div>
-        <form action={logout}>
-          <button className="flex h-[34px] w-full items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-            <LogOut size={16} className="text-ink-3" /> Sair
-          </button>
-        </form>
-      </aside>
-
-      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+    <>
+      <StaffShell user={admin} active="users">
         <header className="flex flex-wrap items-center gap-3 border-b border-rule px-4 py-4 sm:px-8">
           <div className="flex flex-1 flex-col gap-0.5">
             <h1 className="text-xl font-bold">Usuários</h1>
@@ -233,7 +203,7 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
             </table>
           </div>
         </div>
-      </main>
+      </StaffShell>
 
       {form && (
         <div className="fixed inset-0 z-10 flex justify-end bg-ink/30" onClick={() => setForm(null)}>
@@ -311,7 +281,7 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
           </form>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

@@ -30,13 +30,14 @@ async function forward(request: Request, ctx: Ctx) {
 
   if (!upstream) return Response.json({ message: "API indisponível. Tente de novo em instantes." }, { status: 502 });
 
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: {
-      "content-type": upstream.headers.get("content-type") ?? "application/json",
-      "cache-control": "no-cache, no-transform",
-    },
+  const responseHeaders = new Headers({
+    "content-type": upstream.headers.get("content-type") ?? "application/json",
+    "cache-control": "no-cache, no-transform",
   });
+  // Downloads (ex.: CSV de relatórios) mantêm o nome do arquivo.
+  const disposition = upstream.headers.get("content-disposition");
+  if (disposition) responseHeaders.set("content-disposition", disposition);
+  return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
 }
 
 export { forward as GET, forward as POST, forward as PATCH, forward as PUT, forward as DELETE };

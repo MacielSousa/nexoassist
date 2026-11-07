@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, MessageCircle, Search, Users } from "lucide-react";
+import { LogOut, MessageCircle, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { logout } from "@/app/login/actions";
@@ -8,6 +8,7 @@ import { formatDate, formatTime, formatWhen } from "@/lib/format";
 import type { ConsoleItem, Conversation as ConversationDTO, User } from "@/lib/types";
 
 import { NexoMark } from "../nexo-mark";
+import { staffNav } from "../staff-shell";
 import { Avatar, avatarColors, cx, Dot, Pill } from "../ui";
 import { ConversationPanel } from "./conversation-panel";
 
@@ -88,14 +89,16 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
           </span>
           Conversas
         </span>
-        {analyst.role === "admin" && (
-          <Link href="/admin/usuarios" className="group flex flex-col items-center gap-1 pt-1 text-[10.5px] font-medium text-ink-3 hover:text-ink">
-            <span className="grid size-10 place-items-center rounded-xl group-hover:bg-paper">
-              <Users size={19} />
-            </span>
-            Usuários
-          </Link>
-        )}
+        {staffNav(analyst)
+          .filter((item) => item.key !== "console")
+          .map(({ key, href, label, Icon }) => (
+            <Link key={key} href={href} className="group flex flex-col items-center gap-1 pt-1 text-[10.5px] font-medium text-ink-3 hover:text-ink">
+              <span className="grid size-10 place-items-center rounded-xl group-hover:bg-paper">
+                <Icon size={19} />
+              </span>
+              {label}
+            </Link>
+          ))}
         <span className="flex-1" />
         <form action={logout}>
           <button title="Sair" className="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-paper">

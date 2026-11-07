@@ -151,3 +151,98 @@ export const ROLE_LABEL: Record<UserRole, string> = {
   analyst: "Analista",
   employee: "Funcionário",
 };
+
+export const CATEGORIES: Category[] = ["Acesso", "Rede e VPN", "Hardware", "Software", "E-mail", "Outros"];
+export const PRIORITIES: Priority[] = ["Crítica", "Alta", "Média", "Baixa"];
+
+export const STATUS_LABEL: Record<TicketStatus, string> = {
+  aberto: "Aberto",
+  em_andamento: "Em andamento",
+  aguardando_analista: "Aguardando analista",
+  aguardando_funcionario: "Aguardando funcionário",
+  aprovado: "Aprovado",
+  resolvido: "Resolvido",
+  fechado: "Fechado",
+};
+
+export const HANDOFF_REASON_LABEL: Record<string, string> = {
+  pedido_do_funcionario: "Funcionário pediu",
+  critico: "Caso crítico",
+  prazo_vencido: "Prazo vencido",
+  baixa_confianca: "Agent sem segurança",
+  fora_do_alcance: "Fora do alcance do agent",
+};
+
+// ---- Relatórios ----
+
+export interface ReportFilters {
+  from: string;
+  to: string;
+  analystId?: string;
+  team?: SupportTeam;
+  category?: Category;
+  priority?: Priority;
+  type?: TicketType;
+  status?: TicketStatus;
+}
+
+export interface Breakdown {
+  key: string;
+  count: number;
+}
+
+export interface ReportOverview {
+  period: { from: string; to: string };
+  tickets: {
+    created: number;
+    resolved: number;
+    stillOpen: number;
+    overdue: number;
+    slaMetPercent: number | null;
+    avgResolutionHours: number | null;
+    byPriority: Breakdown[];
+    byCategory: Breakdown[];
+    byStatus: Breakdown[];
+    byType: Breakdown[];
+  };
+  conversations: {
+    total: number;
+    resolvedByAgent: number;
+    transferred: number;
+    takenOver: number;
+    avgTakeoverMinutes: number | null;
+    byHandoffReason: Breakdown[];
+  };
+  analysts: {
+    id: string;
+    name: string;
+    team: SupportTeam | null;
+    conversationsTaken: number;
+    conversationsClosed: number;
+    avgTakeoverMinutes: number | null;
+    ticketsResolved: number;
+  }[];
+  daily: { day: string; created: number; resolved: number }[];
+}
+
+export interface ReportTicketRow {
+  number: string;
+  type: TicketType;
+  title: string;
+  category: Category;
+  priority: Priority;
+  status: TicketStatus;
+  requesterName: string;
+  assignedGroup: string | null;
+  resolvedByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface ReportTicketsPage {
+  page: number;
+  pageSize: number;
+  total: number;
+  rows: ReportTicketRow[];
+}

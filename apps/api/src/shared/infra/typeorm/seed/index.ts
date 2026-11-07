@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { hash } from "bcryptjs";
 import { AppDataSource } from "../data-source";
 import { SEED_ARTICLES, SEED_TICKETS, SEED_USERS } from "./data";
+import { seedHistory } from "./history";
 
 /**
  * Popula o banco com dados de exemplo. Idempotente: se já houver usuários, não faz nada.
@@ -91,6 +92,9 @@ async function seed() {
     await message(fabio, "user", "Esqueci a senha da rede", 70, [], "fabio.nunes@nexo.com.br");
     await message(fabio, "assistant", "Você mesmo consegue redefinir em senha.nexo.com.br com o código enviado ao seu celular. A nova senha vale para rede, e-mail e VPN.", 69, ["buscou na central de ajuda"]);
     await message(fabio, "user", "Isso resolveu, obrigado!", 64, [], "fabio.nunes@nexo.com.br");
+
+    // 60 dias de histórico para os relatórios.
+    await seedHistory(tx);
   });
 
   console.log(`Seed concluído: ${SEED_USERS.length} usuários, ${SEED_TICKETS.length} chamados, ${SEED_ARTICLES.length} artigos.`);

@@ -41,3 +41,20 @@ export function formatWhen(iso: string, now: Date = new Date()): string {
 export function formatTime(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
+
+/** Hoje em Brasília no formato AAAA-MM-DD (o que os filtros de data usam). */
+export function todayBrt(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
+}
+
+/** Soma dias a uma data AAAA-MM-DD. */
+export function shiftDay(day: string, days: number): string {
+  const d = new Date(`${day}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** "2026-11-07" → "07 nov". */
+export function formatDay(day: string): string {
+  return formatDate(`${day}T12:00:00-03:00`);
+}
