@@ -12,3 +12,4 @@ data/
 next-env.d.ts
 *.tsbuildinfo
 .claude/
+dist/
