@@ -29,7 +29,7 @@ src/
 - **Privacidade:**
   - O id do funcionário vem da sessão (cookie assinado com HMAC) e é injetado no contexto das tools. O LLM nunca escolhe de quem são os chamados.
   - O serviço também valida o dono de cada chamado (defesa em profundidade).
-- **Segurança:** as chaves ficam no `.env` (fora do git), o serviço exige token interno, há limite de 30 mensagens por sessão e rate limit simples.
+- **Segurança:** as chaves ficam no `.env` (fora do git), o serviço exige token interno, há limite de 30 mensagens por sessão e uma resposta por vez por conversa.
 
 ## Como o agent decide
 
