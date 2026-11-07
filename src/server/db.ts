@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { dataDir } from "@/data-dir";
 import { seedApp } from "./seed";
 
 // Banco do app: usuários, conversas, mensagens e rascunhos. Separado do banco do serviço de chamados.
@@ -70,7 +71,7 @@ export function openAppDb(path: string): DatabaseSync {
 const g = globalThis as unknown as { __appDb?: DatabaseSync };
 
 export function appDb(): DatabaseSync {
-  g.__appDb ??= openAppDb(process.env.APP_DB ?? join(process.cwd(), "data", "app.db"));
+  g.__appDb ??= openAppDb(process.env.APP_DB ?? join(dataDir(), "app.db"));
   return g.__appDb;
 }
 

@@ -32,6 +32,12 @@ export function formatDate(iso: string): string {
     .replace(" de ", " ");
 }
 
+/** Hora se for hoje; senão, data e hora. */
+export function formatWhen(iso: string, now: Date = new Date()): string {
+  const sameDay = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, dateStyle: "short" });
+  return sameDay.format(new Date(iso)) === sameDay.format(now) ? formatTime(iso) : formatDateTime(iso);
+}
+
 export function formatTime(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }

@@ -6,7 +6,7 @@ import type { MessagePart } from "@/agent/types";
 import type { User } from "@/server/auth";
 import { MESSAGE_LIMIT, type ChatStreamEvent, type ConversationSnapshot, type MessageDTO } from "@/server/types";
 import { EmployeeShell } from "../employee-shell";
-import { cx, Pill, TypingDots } from "../ui";
+import { Pill, TypingDots } from "../ui";
 import { ArticleChips, DraftCard, Options, TicketCard, TicketSelector } from "./cards";
 import { DecisionPanel } from "./decision-panel";
 import { mergeSnapshot, postJson, readSse, useLiveConversation } from "./live";

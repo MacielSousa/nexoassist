@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "reset": "rm -rf data"
+    "reset": "rm -rf \"${NEXO_DATA_DIR:-$HOME/.nexo-assist}\""
   },
   "dependencies": {
     "@mastra/core": "^1.82.0",

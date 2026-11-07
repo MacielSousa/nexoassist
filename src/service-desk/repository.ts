@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import {
   isOpen,
   normalize,
+  STATUS_LABEL,
   type Article,
   type NewTicket,
   type Ticket,
@@ -208,7 +209,7 @@ export class ServiceDeskRepository {
     t.status = status;
     t.updatedAt = at;
     t.resolvedAt = status === "resolvido" || status === "fechado" ? at : null;
-    t.comments.push({ at, author, text: `Status alterado para ${status}.` });
+    t.comments.push({ at, author, text: `Status alterado para "${STATUS_LABEL[status]}".` });
     this.save(t);
     return t;
   }

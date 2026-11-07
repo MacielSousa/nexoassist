@@ -3,14 +3,10 @@
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import type { DraftView, MessagePart, TicketView } from "@/agent/types";
-import { AFFECTED_LABEL, formatDate, formatDateTime, formatRelative, formatTime } from "@/domain";
+import { AFFECTED_LABEL, formatDate, formatDateTime, formatRelative, formatWhen } from "@/domain";
 import { cx, Dot, PRIORITY_DOT, STATUS_DOT } from "../ui";
 
-function deadlineText(iso: string) {
-  const d = new Date(iso);
-  const sameDay = new Date().toDateString() === d.toDateString();
-  return sameDay ? `até ${formatTime(iso)}` : `até ${formatDateTime(iso)}`;
-}
+const deadlineText = (iso: string) => `até ${formatWhen(iso)}`;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
