@@ -1,0 +1,28 @@
+{
+  "name": "nexo-assist",
+  "private": true,
+  "description": "Nexo Assist: agent de atendimento do service desk de TI",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n tickets,web -c blue,green \"npm run dev -w @nexo/tickets\" \"npm run dev -w @nexo/web\"",
+    "build": "npm run build -w @nexo/web",
+    "start": "concurrently -k -n tickets,web -c blue,green \"npm run start -w @nexo/tickets\" \"npm run start -w @nexo/web\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "reset": "rm -rf apps/web/data services/tickets/data"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "concurrently": "^9.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}
