@@ -32,7 +32,7 @@ export const SYSTEM_ROLES: { key: string; name: string; description: string; per
     key: "analyst",
     name: "Analista",
     description: "Atende conversas transferidas e trata chamados.",
-    permissions: ["tickets.view_all", "tickets.manage", "console.view", "console.attend", "reports.view"],
+    permissions: ["tickets.view_all", "tickets.manage", "console.view", "console.attend"],
   },
   {
     key: "employee",
