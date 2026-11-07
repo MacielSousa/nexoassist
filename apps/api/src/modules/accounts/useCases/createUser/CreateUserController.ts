@@ -10,9 +10,9 @@ export class CreateUserController {
       name: z.string().trim().min(3).max(120).meta({ example: "Marina Alves" }),
       email: z.email().meta({ example: "marina.alves@nexo.com.br" }),
       password: z.string().min(8, "A senha precisa ter ao menos 8 caracteres").max(72),
-      roleId: z.uuid().meta({ description: "Role (GET /roles)" }),
+      roleIds: z.array(z.uuid()).min(1, "Escolha ao menos uma role").max(20).meta({ description: "Roles (GET /roles)" }),
       department: z.string().trim().min(2).max(80).meta({ example: "Financeiro" }),
-      team: z.enum(SUPPORT_TEAMS).nullish().meta({ description: "Obrigatória se a role atende no console" }),
+      team: z.enum(SUPPORT_TEAMS).nullish().meta({ description: "Obrigatória se alguma role atende no console" }),
     })
     .meta({ id: "CreateUser" });
 

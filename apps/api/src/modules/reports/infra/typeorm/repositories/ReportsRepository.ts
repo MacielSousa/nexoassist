@@ -1,4 +1,5 @@
 import type { Priority, TicketStatus } from "@modules/tickets/domain/ticketRules";
+import { HAS_PERMISSION_SQL } from "@modules/accounts/infra/typeorm/repositories/UsersRepository";
 import type { IAnalystRow, IBreakdown, IConversationStats, IReportFilters, IReportTicketRow } from "@modules/reports/dtos/IReportFilters";
 import type { IReportsRepository } from "@modules/reports/repositories/IReportsRepository";
 import { AppDataSource } from "@shared/infra/typeorm/data-source";
@@ -109,11 +110,8 @@ export class ReportsRepository implements IReportsRepository {
 
   async analysts(f: IReportFilters): Promise<IAnalystRow[]> {
     const params: unknown[] = [f.from, f.to];
-    // Analistas = quem pode atender no console (pela role ou permissão concedida direto).
-    const where = [
-      `(EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id = u.role_id AND rp.permission_key = 'console.attend')
-        OR EXISTS (SELECT 1 FROM user_permissions up WHERE up.user_id = u.id AND up.permission_key = 'console.attend'))`,
-    ];
+    // Analistas = quem pode atender no console (por alguma role ou permissão concedida direto).
+    const where = [HAS_PERMISSION_SQL("'console.attend'")];
     if (f.analystId) {
       params.push(f.analystId);
       where.push(`u.id = $${params.length}`);

@@ -3,7 +3,7 @@ import { container } from "tsyringe";
 import { z } from "zod";
 import { PERMISSION_KEYS } from "@modules/accounts/dtos/permissions";
 import { SUPPORT_TEAMS } from "@modules/accounts/dtos/UserRole";
-import { SetUserPermissionsUseCase } from "../setUserPermissions/SetUserPermissionsUseCase";
+import { SetUserAccessUseCase } from "../setUserAccess/SetUserAccessUseCase";
 import { UpdateUserUseCase } from "./UpdateUserUseCase";
 
 export class UpdateUserController {
@@ -11,7 +11,6 @@ export class UpdateUserController {
   static body = z
     .object({
       name: z.string().trim().min(3).max(120),
-      roleId: z.uuid(),
       department: z.string().trim().min(2).max(80),
       team: z.enum(SUPPORT_TEAMS).nullable(),
       active: z.boolean(),
@@ -19,9 +18,13 @@ export class UpdateUserController {
     })
     .partial()
     .meta({ id: "UpdateUser" });
-  static permissionsBody = z
-    .object({ permissions: z.array(z.enum(PERMISSION_KEYS)).meta({ description: "Permissões extras (além das da role). Substitui a lista atual." }) })
-    .meta({ id: "SetUserPermissions" });
+  static accessBody = z
+    .object({
+      roleIds: z.array(z.uuid()).max(20).meta({ description: "Roles do usuário (macro). Substitui a lista atual." }),
+      permissions: z.array(z.enum(PERMISSION_KEYS)).meta({ description: "Permissões concedidas direto (micro), além das roles. Substitui a lista atual." }),
+      team: z.enum(SUPPORT_TEAMS).nullish().meta({ description: "Fila; obrigatória se o acesso inclui console.attend. Omitida mantém a atual." }),
+    })
+    .meta({ id: "SetUserAccess" });
 
   async handle(request: Request, response: Response): Promise<Response> {
     const { id } = UpdateUserController.params.parse(request.params);
@@ -29,9 +32,9 @@ export class UpdateUserController {
     return response.json(await container.resolve(UpdateUserUseCase).execute({ id, actor: request.user, ...body }));
   }
 
-  async setPermissions(request: Request, response: Response): Promise<Response> {
+  async setAccess(request: Request, response: Response): Promise<Response> {
     const { id } = UpdateUserController.params.parse(request.params);
-    const { permissions } = UpdateUserController.permissionsBody.parse(request.body);
-    return response.json(await container.resolve(SetUserPermissionsUseCase).execute({ actor: request.user, userId: id, permissions }));
+    const { team, ...body } = UpdateUserController.accessBody.parse(request.body);
+    return response.json(await container.resolve(SetUserAccessUseCase).execute({ actor: request.user, userId: id, ...body, team: team === undefined ? undefined : team }));
   }
 }

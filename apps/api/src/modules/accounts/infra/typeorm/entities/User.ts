@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import type { SupportTeam } from "@modules/accounts/dtos/UserRole";
 import { Role } from "./Role";
 import { UserPermission } from "./UserPermission";
@@ -18,17 +18,21 @@ export class User {
   @Column({ type: "varchar" })
   password: string;
 
-  @Column({ name: "role_id", type: "uuid" })
-  roleId: string;
+  /**
+   * Acesso "macro": roles do usuário, cada uma com um conjunto de permissões.
+   * Os repositórios sempre carregam as roles com as permissões.
+   */
+  @ManyToMany(() => Role)
+  @JoinTable({
+    name: "user_roles",
+    joinColumn: { name: "user_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "role_id", referencedColumnName: "id" },
+  })
+  roles: Role[];
 
-  /** Role com as permissões (os repositórios sempre carregam). */
-  @ManyToOne(() => Role)
-  @JoinColumn({ name: "role_id" })
-  role: Role;
-
-  /** Permissões concedidas direto ao usuário, além das da role. */
+  /** Acesso "micro": permissões concedidas direto ao usuário, fora de qualquer role. */
   @OneToMany(() => UserPermission, (p) => p.user)
-  extraPermissions: UserPermission[];
+  directPermissions: UserPermission[];
 
   @Column({ type: "varchar" })
   department: string;

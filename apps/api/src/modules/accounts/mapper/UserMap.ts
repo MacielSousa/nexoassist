@@ -10,11 +10,12 @@ export const UserResponseSchema = z
     id: z.uuid(),
     name: z.string(),
     email: z.email(),
-    role: z.object({ id: z.uuid(), key: z.string(), name: z.string() }),
-    /** Permissões efetivas (role + extras): o front usa para montar menus. */
+    /** Roles do usuário (acesso macro). */
+    roles: z.array(z.object({ id: z.uuid(), key: z.string(), name: z.string() })),
+    /** Permissões efetivas (roles + diretas): o front usa para montar menus. */
     permissions: z.array(z.enum(PERMISSION_KEYS)),
-    /** Permissões concedidas direto ao usuário, além das da role. */
-    extraPermissions: z.array(z.enum(PERMISSION_KEYS)),
+    /** Permissões concedidas direto ao usuário (acesso micro), além das roles. */
+    directPermissions: z.array(z.enum(PERMISSION_KEYS)),
     department: z.string(),
     team: z.enum(SUPPORT_TEAMS).nullable(),
     active: z.boolean(),
@@ -44,9 +45,9 @@ export class UserMap {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: { id: user.role.id, key: user.role.key, name: user.role.name },
+      roles: [...(user.roles ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map((r) => ({ id: r.id, key: r.key, name: r.name })),
       permissions: effectivePermissions(user),
-      extraPermissions: (user.extraPermissions ?? []).map((p) => p.permissionKey) as IUserResponseDTO["extraPermissions"],
+      directPermissions: (user.directPermissions ?? []).map((p) => p.permissionKey) as IUserResponseDTO["directPermissions"],
       department: user.department,
       team: user.team,
       active: user.active,

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Permission } from "./Permission";
 
-/** Conjunto nomeado de permissões. Cada usuário tem uma role. */
+/** Conjunto nomeado de permissões. Um usuário pode ter várias roles (tabela user_roles). */
 @Entity("roles")
 export class Role {
   @PrimaryGeneratedColumn("uuid")

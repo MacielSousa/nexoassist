@@ -3,24 +3,26 @@
 import { CircleAlert, KeyRound, LoaderCircle, Pencil, Plus, Search, UserRoundCheck, UserRoundX, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatDate } from "@/lib/format";
-import { can, type Permission, type PermissionInfo, type Role, type SupportTeam, type User } from "@/lib/types";
+import { can, type PermissionInfo, type Role, type SupportTeam, type User } from "@/lib/types";
 import { postJson } from "../chat/live";
 import { AvatarEditor } from "../profile/avatar-editor";
 import { StaffShell } from "../staff-shell";
 import { Avatar, avatarColors, cx, Pill } from "../ui";
-import { PermissionChecklist } from "./permission-checklist";
+import { AccessEditor } from "./access-editor";
+import { RoleChecklist } from "./permission-checklist";
 
 interface FormState {
   id?: string;
   name: string;
   email: string;
-  roleId: string;
+  /** Só no cadastro; depois, as roles são editadas no Acesso. */
+  roleIds: string[];
   department: string;
   team: SupportTeam | "";
   password: string;
 }
 
-async function sendJson<T>(url: string, method: "POST" | "PATCH" | "PUT", body: unknown): Promise<T> {
+export async function sendJson<T>(url: string, method: "POST" | "PATCH" | "PUT", body: unknown): Promise<T> {
   if (method === "POST") return postJson<T>(url, body);
   const res = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const data = (await res.json().catch(() => ({}))) as T & { message?: string; issues?: { path: string; message: string }[] };
@@ -29,7 +31,7 @@ async function sendJson<T>(url: string, method: "POST" | "PATCH" | "PUT", body: 
 }
 
 /**
- * Usuários: cadastro, edição, ativação e permissões extras.
+ * Usuários: cadastro, edição, ativação e acesso (roles + permissões diretas).
  * Quem tem só users.view vê a lista sem os botões de edição.
  */
 export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; initialUsers: User[]; roles: Role[]; catalog: PermissionInfo[] }) {
@@ -38,21 +40,23 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [form, setForm] = useState<FormState | null>(null);
-  const [permsFor, setPermsFor] = useState<{ user: User; extras: Permission[] } | null>(null);
+  const [accessFor, setAccessFor] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const rolesById = useMemo(() => new Map(roles.map((r) => [r.id, r])), [roles]);
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return users.filter((u) => (roleFilter === "all" || u.role.id === roleFilter) && (!q || u.name.toLowerCase().includes(q) || u.email.includes(q)));
+    return users.filter(
+      (u) =>
+        (roleFilter === "all" || (roleFilter === "direct" ? u.directPermissions.length > 0 : u.roles.some((r) => r.id === roleFilter))) &&
+        (!q || u.name.toLowerCase().includes(q) || u.email.includes(q)),
+    );
   }, [users, roleFilter, query]);
 
   const upsert = (user: User) => setUsers((list) => [...list.filter((u) => u.id !== user.id), user].sort((a, b) => a.name.localeCompare(b.name)));
-  const selectedRole = form ? rolesById.get(form.roleId) : undefined;
-  const needsTeam = Boolean(selectedRole?.permissions.includes("console.attend"));
-  // Sem escalada: só dá para conceder o que você mesmo tem (quem gerencia roles concede tudo).
-  const cannotGrant = (p: Permission) => !can(me, "roles.manage") && !me.permissions.includes(p);
+  const formRoles = form ? roles.filter((r) => form.roleIds.includes(r.id)) : [];
+  const needsTeam = !form?.id && formRoles.some((r) => r.permissions.includes("console.attend"));
+  const editingAttends = Boolean(form?.id && users.find((u) => u.id === form.id)?.permissions.includes("console.attend"));
 
   const run = async (fn: () => Promise<void>) => {
     setSaving(true);
@@ -69,28 +73,32 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
   const saveUser = () =>
     run(async () => {
       if (!form) return;
-      const team = needsTeam ? form.team || null : null;
       const user = form.id
         ? await sendJson<User>(`/api/users/${form.id}`, "PATCH", {
             name: form.name,
-            roleId: form.roleId,
             department: form.department,
-            team,
+            ...(editingAttends ? { team: form.team || null } : {}),
             ...(form.password ? { password: form.password } : {}),
           })
-        : await sendJson<User>("/api/users", "POST", { ...form, team });
+        : await sendJson<User>("/api/users", "POST", {
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            roleIds: form.roleIds,
+            department: form.department,
+            team: needsTeam ? form.team || null : null,
+          });
       upsert(user);
       setForm(null);
     });
 
-  const savePermissions = () =>
-    run(async () => {
-      if (!permsFor) return;
-      upsert(await sendJson<User>(`/api/users/${permsFor.user.id}/permissions`, "PUT", { permissions: permsFor.extras }));
-      setPermsFor(null);
-    });
-
   const toggleActive = (user: User) => run(async () => upsert(await sendJson<User>(`/api/users/${user.id}`, "PATCH", { active: !user.active })));
+
+  const chips = [
+    { id: "all", name: "Todos", count: users.length },
+    ...roles.map((r) => ({ id: r.id, name: r.name, count: users.filter((u) => u.roles.some((x) => x.id === r.id)).length })),
+    { id: "direct", name: "Com permissões diretas", count: users.filter((u) => u.directPermissions.length > 0).length },
+  ];
 
   return (
     <>
@@ -98,13 +106,14 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
         <header className="flex flex-wrap items-center gap-3 border-b border-rule px-4 py-4 sm:px-8">
           <div className="flex flex-1 flex-col gap-0.5">
             <h1 className="text-xl font-bold">Usuários</h1>
-            <p className="text-[13.5px] text-ink-3">Cada usuário tem uma role e pode receber permissões extras.</p>
+            <p className="text-[13.5px] text-ink-3">O acesso de cada pessoa = as permissões das roles dela (macro) + as concedidas direto (micro).</p>
           </div>
           {canManage && (
             <button
               onClick={() => {
                 setError(null);
-                setForm({ name: "", email: "", roleId: roles.find((r) => r.key === "employee")?.id ?? roles[0]!.id, department: "", team: "", password: "" });
+                const employee = roles.find((r) => r.key === "employee") ?? roles[0];
+                setForm({ name: "", email: "", roleIds: employee ? [employee.id] : [], department: "", team: "", password: "" });
               }}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-cta px-3.5 text-[13.5px] font-semibold text-white hover:bg-cta-hover"
             >
@@ -116,16 +125,16 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
         <div className="flex flex-col gap-4 px-4 py-5 sm:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex flex-wrap gap-1">
-              {[{ id: "all", name: "Todos" }, ...roles].map((r) => (
+              {chips.map((c) => (
                 <button
-                  key={r.id}
-                  onClick={() => setRoleFilter(r.id)}
+                  key={c.id}
+                  onClick={() => setRoleFilter(c.id)}
                   className={cx(
                     "flex items-center gap-1.5 rounded-full px-[10px] py-1.5 text-[12.5px] font-medium",
-                    roleFilter === r.id ? "bg-primary-soft text-primary-text" : "bg-desk text-ink-2 hover:bg-rule",
+                    roleFilter === c.id ? "bg-primary-soft text-primary-text" : "bg-desk text-ink-2 hover:bg-rule",
                   )}
                 >
-                  {r.name} <span className="font-semibold">{r.id === "all" ? users.length : users.filter((u) => u.role.id === r.id).length}</span>
+                  {c.name} <span className="font-semibold">{c.count}</span>
                 </button>
               ))}
             </div>
@@ -135,7 +144,7 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
             </label>
           </div>
 
-          {error && !form && !permsFor && (
+          {error && !form && !accessFor && (
             <p role="alert" className="flex items-center gap-2 rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger-text">
               <CircleAlert size={14} /> {error}
             </p>
@@ -146,7 +155,7 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
               <thead className="bg-desk text-[12.5px] text-ink-3">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Usuário</th>
-                  <th className="px-4 py-2.5 font-medium">Role</th>
+                  <th className="px-4 py-2.5 font-medium">Acesso</th>
                   <th className="px-4 py-2.5 font-medium">Área / fila</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
                   <th className="px-4 py-2.5 font-medium">Desde</th>
@@ -166,10 +175,17 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="flex flex-col">
-                        {u.role.name}
-                        {u.extraPermissions.length > 0 && (
-                          <span className="text-[12px] text-primary-text">+{u.extraPermissions.length} permissão(ões) extra(s)</span>
+                      <span className="flex flex-wrap items-center gap-1">
+                        {u.roles.map((r) => (
+                          <span key={r.id} className="rounded-full bg-desk px-2 py-0.5 text-[12px] font-medium text-ink-2">
+                            {r.name}
+                          </span>
+                        ))}
+                        {u.roles.length === 0 && <span className="text-[12px] text-ink-3">Sem role</span>}
+                        {u.directPermissions.length > 0 && (
+                          <span title={u.directPermissions.join(", ")} className="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-medium text-primary-text">
+                            +{u.directPermissions.length} direta{u.directPermissions.length > 1 ? "s" : ""}
+                          </span>
                         )}
                       </span>
                     </td>
@@ -180,20 +196,20 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
                       {canManage && (
                         <span className="flex justify-end gap-1">
                           <button
-                            title="Editar"
+                            title="Editar dados"
                             onClick={() => {
                               setError(null);
-                              setForm({ id: u.id, name: u.name, email: u.email, roleId: u.role.id, department: u.department, team: u.team ?? "", password: "" });
+                              setForm({ id: u.id, name: u.name, email: u.email, roleIds: [], department: u.department, team: u.team ?? "", password: "" });
                             }}
                             className="grid size-8 place-items-center rounded-lg text-ink-2 hover:bg-desk"
                           >
                             <Pencil size={15} />
                           </button>
                           <button
-                            title="Permissões"
+                            title="Acesso: roles e permissões"
                             onClick={() => {
                               setError(null);
-                              setPermsFor({ user: u, extras: u.extraPermissions });
+                              setAccessFor(u);
                             }}
                             className="grid size-8 place-items-center rounded-lg text-ink-2 hover:bg-desk"
                           >
@@ -246,73 +262,71 @@ export function UsersAdmin({ me, initialUsers, roles, catalog }: { me: User; ini
                 required
                 type="email"
                 disabled={Boolean(form.id)}
-                title={form.id ? "Só a própria pessoa troca o e-mail (em Meu perfil, com a senha)." : undefined}
+                title={form.id ? "Só a própria pessoa troca o e-mail (no perfil, com a senha)." : undefined}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="nome.sobrenome@nexo.com.br"
                 className={cx(inputClass, form.id && "bg-desk text-ink-3")}
               />
             </Field>
-            <Field label="Role">
-              <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })} className={inputClass} disabled={form.id === me.id}>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              {selectedRole && <span className="text-[12px] font-normal text-ink-3">{selectedRole.description || `${selectedRole.permissions.length} permissões`}</span>}
-            </Field>
             <Field label="Área">
               <input required minLength={2} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="Financeiro, Compras, TI…" className={inputClass} />
             </Field>
-            {needsTeam && (
+            {!form.id && (
+              <fieldset className="flex flex-col gap-1.5">
+                <legend className="pb-1.5 text-[13px] font-medium">Roles</legend>
+                <RoleChecklist
+                  roles={roles}
+                  selected={form.roleIds}
+                  onToggle={(id) => setForm({ ...form, roleIds: form.roleIds.includes(id) ? form.roleIds.filter((x) => x !== id) : [...form.roleIds, id] })}
+                />
+                <span className="text-[12px] text-ink-3">Permissões avulsas podem ser concedidas depois, em Acesso.</span>
+              </fieldset>
+            )}
+            {(needsTeam || editingAttends) && (
               <Field label="Fila de atendimento">
-                <select required value={form.team} onChange={(e) => setForm({ ...form, team: e.target.value as SupportTeam })} className={inputClass}>
-                  <option value="">Selecione</option>
-                  <option value="Suporte N1">Suporte N1</option>
-                  <option value="Suporte N2">Suporte N2</option>
-                </select>
+                <TeamSelect value={form.team} onChange={(team) => setForm({ ...form, team })} />
               </Field>
             )}
             <Field label={form.id ? "Nova senha (deixe em branco para manter)" : "Senha inicial"}>
               <input type="password" autoComplete="new-password" required={!form.id} minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={inputClass} />
             </Field>
             {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger-text">{error}</p>}
-            <DrawerActions saving={saving} label={form.id ? "Salvar alterações" : "Cadastrar"} onCancel={() => setForm(null)} />
+            <DrawerActions saving={saving} disabled={!form.id && form.roleIds.length === 0} label={form.id ? "Salvar alterações" : "Cadastrar"} onCancel={() => setForm(null)} />
           </form>
         </Drawer>
       )}
 
-      {permsFor && (
-        <Drawer title={`Permissões de ${permsFor.user.name.split(" ")[0]}`} onClose={() => setPermsFor(null)}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void savePermissions();
+      {accessFor && (
+        <Drawer title={`Acesso de ${accessFor.name}`} onClose={() => setAccessFor(null)} wide>
+          <AccessEditor
+            me={me}
+            user={accessFor}
+            roles={roles}
+            catalog={catalog}
+            onSaved={(user) => {
+              upsert(user);
+              setAccessFor(null);
             }}
-            className="flex flex-1 flex-col gap-4"
-          >
-            <p className="text-[13px] text-ink-3">
-              As marcadas em cinza vêm da role <strong className="text-ink-2">{permsFor.user.role.name}</strong>. Marque as extras que este usuário deve ter além delas.
-            </p>
-            <PermissionChecklist
-              catalog={catalog}
-              selected={permsFor.extras}
-              locked={Object.fromEntries((rolesById.get(permsFor.user.role.id)?.permissions ?? []).map((p) => [p, `pela role ${permsFor.user.role.name}`]))}
-              disabled={(p) => cannotGrant(p) && !permsFor.extras.includes(p)}
-              onToggle={(p) => setPermsFor({ ...permsFor, extras: permsFor.extras.includes(p) ? permsFor.extras.filter((x) => x !== p) : [...permsFor.extras, p] })}
-            />
-            {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger-text">{error}</p>}
-            <DrawerActions saving={saving} label="Salvar permissões" onCancel={() => setPermsFor(null)} />
-          </form>
+            onCancel={() => setAccessFor(null)}
+          />
         </Drawer>
       )}
     </>
   );
 }
 
-const inputClass = "h-10 w-full rounded-lg border border-ink/12 bg-paper px-3 text-[14px] outline-none focus:border-cta";
+export const inputClass = "h-10 w-full rounded-lg border border-ink/12 bg-paper px-3 text-[14px] outline-none focus:border-cta";
+
+export function TeamSelect({ value, onChange }: { value: SupportTeam | ""; onChange: (team: SupportTeam | "") => void }) {
+  return (
+    <select required value={value} onChange={(e) => onChange(e.target.value as SupportTeam | "")} className={inputClass}>
+      <option value="">Selecione</option>
+      <option value="Suporte N1">Suporte N1</option>
+      <option value="Suporte N2">Suporte N2</option>
+    </select>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -323,10 +337,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function Drawer({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Drawer({ title, onClose, wide = false, children }: { title: string; onClose: () => void; wide?: boolean; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-20 flex justify-end bg-ink/30" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto bg-paper p-6 shadow-xl" role="dialog" aria-label={title}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={cx("flex h-full w-full flex-col gap-4 overflow-y-auto bg-paper p-6 shadow-xl", wide ? "max-w-2xl" : "max-w-md")}
+        role="dialog"
+        aria-label={title}
+      >
         <div className="flex items-center">
           <h2 className="flex-1 text-lg font-bold">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Fechar" className="grid size-8 place-items-center rounded-lg hover:bg-desk">
@@ -339,10 +358,13 @@ export function Drawer({ title, onClose, children }: { title: string; onClose: (
   );
 }
 
-export function DrawerActions({ saving, label, onCancel }: { saving: boolean; label: string; onCancel: () => void }) {
+export function DrawerActions({ saving, label, onCancel, disabled = false }: { saving: boolean; label: string; onCancel: () => void; disabled?: boolean }) {
   return (
-    <div className="mt-auto flex gap-2 pt-2">
-      <button disabled={saving} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cta text-[14px] font-semibold text-white hover:bg-cta-hover disabled:opacity-70">
+    <div className="sticky bottom-0 mt-auto flex gap-2 bg-paper pt-2">
+      <button
+        disabled={saving || disabled}
+        className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cta text-[14px] font-semibold text-white hover:bg-cta-hover disabled:opacity-60"
+      >
         {saving && <LoaderCircle size={15} className="animate-spin" />}
         {label}
       </button>

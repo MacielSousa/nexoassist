@@ -96,7 +96,7 @@ export class RolesUseCases {
     if (!role) throw new AppError("Role não encontrada.", 404);
     if (role.isSystem) throw new AppError("Roles de sistema não podem ser excluídas.", 409);
     const count = await this.roles.countUsers(id);
-    if (count > 0) throw new AppError(`Há ${count} usuário(s) com essa role. Mude a role deles antes de excluir.`, 409);
+    if (count > 0) throw new AppError(`Há ${count} usuário(s) com essa role. Retire a role deles antes de excluir.`, 409);
     await this.roles.delete(id);
   }
 }

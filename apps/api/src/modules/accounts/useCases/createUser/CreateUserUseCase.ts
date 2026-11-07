@@ -9,7 +9,10 @@ import { AccessGuard } from "@modules/accounts/services/AccessGuard";
 import type { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 import { AppError } from "@shared/errors/AppError";
 
-/** Cadastro de usuários (quem tem users.manage). A role define o que a pessoa pode fazer. */
+/**
+ * Cadastro de usuários (quem tem users.manage). O usuário nasce com uma ou mais roles;
+ * permissões diretas são concedidas depois, no acesso do usuário.
+ */
 @injectable()
 export class CreateUserUseCase {
   constructor(
@@ -22,9 +25,11 @@ export class CreateUserUseCase {
     const email = data.email.trim().toLowerCase();
     if (await this.usersRepository.findByEmail(email)) throw new AppError("Já existe um usuário com esse e-mail.", 409);
 
-    const role = await this.rolesRepository.findById(data.roleId);
-    if (!role) throw new AppError("Role não encontrada.", 422);
-    const rolePermissions = role.permissions.map((p) => p.key) as Permission[];
+    const roleIds = [...new Set(data.roleIds)];
+    if (!roleIds.length) throw new AppError("Escolha ao menos uma role.");
+    const roles = await Promise.all(roleIds.map((id) => this.rolesRepository.findById(id)));
+    if (roles.some((r) => !r)) throw new AppError("Role não encontrada.", 422);
+    const rolePermissions = [...new Set(roles.flatMap((r) => r!.permissions.map((p) => p.key as Permission)))];
     AccessGuard.ensureCanGrant(actor, rolePermissions);
 
     // Quem atende no console precisa de uma fila (N1/N2) para receber transferências.
@@ -33,6 +38,7 @@ export class CreateUserUseCase {
 
     const user = await this.usersRepository.create({
       ...data,
+      roleIds,
       email,
       name: data.name.trim(),
       team: attends ? data.team : null,

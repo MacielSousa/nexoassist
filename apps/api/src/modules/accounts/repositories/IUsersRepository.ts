@@ -1,5 +1,6 @@
 import type { ICreateUserDTO, IUpdateUserDTO } from "../dtos/ICreateUserDTO";
 import type { Permission } from "../dtos/permissions";
+import type { SupportTeam } from "../dtos/UserRole";
 import type { User } from "../infra/typeorm/entities/User";
 
 export interface IListUsersFilter {
@@ -8,7 +9,14 @@ export interface IListUsersFilter {
   active?: boolean;
 }
 
-/** Todos os métodos devolvem o usuário com a role (e suas permissões) e as permissões extras. */
+/** Acesso completo de um usuário: roles (macro) + permissões diretas (micro) + fila. */
+export interface IUserAccess {
+  roleIds: string[];
+  permissions: Permission[];
+  team: SupportTeam | null;
+}
+
+/** Todos os métodos devolvem o usuário com as roles (e suas permissões) e as permissões diretas. */
 export interface IUsersRepository {
   create(data: ICreateUserDTO): Promise<User>;
   update(id: string, data: IUpdateUserDTO): Promise<User>;
@@ -16,8 +24,8 @@ export interface IUsersRepository {
   findByEmail(email: string): Promise<User | null>;
   findByIds(ids: string[]): Promise<User[]>;
   list(filter: IListUsersFilter): Promise<User[]>;
-  /** Substitui as permissões concedidas direto ao usuário. */
-  setExtraPermissions(userId: string, permissions: Permission[], grantedById: string): Promise<User>;
-  /** Quantos usuários ativos têm a permissão (pela role ou concedida direto). */
+  /** Substitui roles, permissões diretas e fila do usuário (tudo ou nada). */
+  setAccess(userId: string, access: IUserAccess, grantedById: string): Promise<User>;
+  /** Quantos usuários ativos têm a permissão (por alguma role ou concedida direto). */
   countActiveWithPermission(permission: Permission): Promise<number>;
 }

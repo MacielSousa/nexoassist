@@ -3,7 +3,6 @@ import type { IRolesRepository, ISaveRoleDTO } from "@modules/accounts/repositor
 import { AppDataSource } from "@shared/infra/typeorm/data-source";
 import { Permission } from "../entities/Permission";
 import { Role } from "../entities/Role";
-import { User } from "../entities/User";
 
 export class RolesRepository implements IRolesRepository {
   private repository: Repository<Role>;
@@ -16,7 +15,7 @@ export class RolesRepository implements IRolesRepository {
 
   async list() {
     const roles = await this.repository.find({ relations: { permissions: true }, order: { isSystem: "DESC", name: "ASC" } });
-    const counts = (await AppDataSource.query(`SELECT role_id, COUNT(*)::int AS n FROM users GROUP BY role_id`)) as { role_id: string; n: number }[];
+    const counts = (await AppDataSource.query(`SELECT role_id, COUNT(*)::int AS n FROM user_roles GROUP BY role_id`)) as { role_id: string; n: number }[];
     const byRole = new Map(counts.map((c) => [c.role_id, c.n]));
     return roles.map((r) => Object.assign(r, { userCount: byRole.get(r.id) ?? 0 }));
   }
@@ -52,8 +51,9 @@ export class RolesRepository implements IRolesRepository {
     await this.repository.delete(id);
   }
 
-  countUsers(roleId: string) {
-    return AppDataSource.getRepository(User).countBy({ roleId });
+  async countUsers(roleId: string) {
+    const [row] = (await AppDataSource.query(`SELECT COUNT(*)::int AS n FROM user_roles WHERE role_id = $1`, [roleId])) as { n: number }[];
+    return row!.n;
   }
 
   listPermissions() {

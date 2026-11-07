@@ -39,7 +39,7 @@ export async function seedHistory(tx: EntityManager, days = 60) {
   const pick = <T>(list: T[]) => list[Math.floor(rnd() * list.length)]!;
   const between = (min: number, max: number) => min + rnd() * (max - min);
 
-  const users = (await tx.query(`SELECT u.id, u.name, r.key AS role, u.team FROM users u JOIN roles r ON r.id = u.role_id WHERE u.active`)) as { id: string; name: string; role: string; team: string | null }[];
+  const users = (await tx.query(`SELECT u.id, u.name, r.key AS role, u.team FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE u.active`)) as { id: string; name: string; role: string; team: string | null }[];
   const employees = users.filter((u) => u.role === "employee");
   const analysts = users.filter((u) => u.role === "analyst");
   if (!employees.length || !analysts.length) return;

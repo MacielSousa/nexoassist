@@ -68,7 +68,7 @@ export function RolesAdmin({ me, initialRoles, catalog }: { me: User; initialRol
         <header className="flex flex-wrap items-center gap-3 border-b border-rule px-4 py-4 sm:px-8">
           <div className="flex flex-1 flex-col gap-0.5">
             <h1 className="text-xl font-bold">Roles e permissões</h1>
-            <p className="text-[13.5px] text-ink-3">Uma role agrupa permissões. Para dar algo a mais a uma pessoa, use Usuários → Permissões.</p>
+            <p className="text-[13.5px] text-ink-3">Uma role agrupa permissões (acesso macro). Um usuário pode ter várias; para algo avulso, use Usuários → Acesso.</p>
           </div>
           <button
             onClick={() => {

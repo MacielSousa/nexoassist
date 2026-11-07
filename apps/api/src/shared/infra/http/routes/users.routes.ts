@@ -130,12 +130,14 @@ defineRoute(usersRoutes, "/users", {
 
 defineRoute(usersRoutes, "/users", {
   method: "put",
-  path: "/:id/permissions",
+  path: "/:id/access",
   tag: "Usuários",
-  summary: "Conceder permissões extras a um usuário",
-  description: "Além das permissões da role. A lista enviada substitui a atual. Só é possível conceder permissões que você mesmo tem.",
+  summary: "Definir o acesso de um usuário: roles (macro) e permissões diretas (micro)",
+  description:
+    "As listas enviadas substituem as atuais. Só é possível conceder (por role ou direto) o que você mesmo tem, " +
+    "salvo quem tem roles.manage. Ninguém altera o próprio acesso, e o sistema nunca fica sem administradores.",
   auth: ["users.manage"],
-  request: { params: UpdateUserController.params, body: UpdateUserController.permissionsBody },
+  request: { params: UpdateUserController.params, body: UpdateUserController.accessBody },
   responses: { 200: { description: "Usuário atualizado", schema: UserResponseSchema } },
-  handler: new UpdateUserController().setPermissions,
+  handler: new UpdateUserController().setAccess,
 });

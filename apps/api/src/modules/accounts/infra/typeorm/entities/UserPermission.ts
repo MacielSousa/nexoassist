@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { User } from "./User";
 
-/** Permissão concedida direto a um usuário, além das da role dele. */
+/** Permissão concedida direto a um usuário (micro), além das das roles dele. */
 @Entity("user_permissions")
 export class UserPermission {
   @PrimaryColumn({ name: "user_id", type: "uuid" })
@@ -10,7 +10,7 @@ export class UserPermission {
   @PrimaryColumn({ name: "permission_key", type: "varchar" })
   permissionKey: string;
 
-  @ManyToOne(() => User, (user) => user.extraPermissions, { onDelete: "CASCADE" })
+  @ManyToOne(() => User, (user) => user.directPermissions, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: User;
 

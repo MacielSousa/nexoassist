@@ -37,11 +37,12 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: { id: string; key: string; name: string };
-  /** Permissões efetivas (role + extras). */
+  /** Roles do usuário (acesso macro). */
+  roles: { id: string; key: string; name: string }[];
+  /** Permissões efetivas (roles + diretas). */
   permissions: Permission[];
-  /** Concedidas direto ao usuário, além das da role. */
-  extraPermissions: Permission[];
+  /** Concedidas direto ao usuário (acesso micro), além das roles. */
+  directPermissions: Permission[];
   department: string;
   team: SupportTeam | null;
   active: boolean;
