@@ -8,17 +8,23 @@ Um agent de chat que resolve dúvidas pela central de ajuda, consulta, abre e at
 
 ## Arquitetura
 
+Stack sugerida no PRD: **TypeScript estrito + Next.js + Mastra**, num único projeto e com um comando para rodar.
+
 ```
-apps/web            Next.js (UI do funcionário + console do analista + API)
-  └─ usa ─▶ packages/agent    Agent Mastra, tools, cliente do serviço de chamados
-                └─ usa ─▶ packages/domain   Regras puras: prioridade, SLA em horário útil, tipos e schemas
-services/tickets    Serviço de chamados simulado (Hono + SQLite), separado do agent.
-                    Inclui a central de ajuda. Simula indisponibilidade do sistema legado.
+src/
+  app/                       Next.js: páginas (login, chat, perfil, console) e route handlers
+    api/service-desk/...     HTTP do serviço de chamados simulado (só fala com service-desk/)
+  service-desk/              Serviço de chamados simulado: chamados + central de ajuda, seed (Anexo B),
+                             indisponibilidade simulada do sistema legado. Não conhece o agent.
+  agent/                     Mastra: agent, tools e cliente HTTP do service desk (timeout, retry, backoff)
+  domain/                    Regras puras: prioridade, SLA em horário útil, duplicidade, tipos e schemas
+  server/                    Auth, conversas e orquestração do atendimento (agent ↔ analista)
+  components/                UI seguindo o protótipo
 ```
 
-- **Separação:** a interface não conhece o LLM. O agent não acessa banco: fala com o serviço de chamados por HTTP através de um cliente com timeout, retry e backoff. As regras de negócio (prioridade, prazos, duplicidade) são funções puras e testadas, em vez de ficarem escondidas no prompt.
+- **Separação:** a interface não conhece o LLM. O agent não acessa banco: fala com o serviço de chamados por HTTP (`/api/service-desk`) através de um cliente com timeout, retry e backoff. As regras de negócio (prioridade, prazos, duplicidade) são funções puras e testadas, em vez de ficarem escondidas no prompt.
 - **Persistência:**
-  - SQLite (`node:sqlite`) em dois bancos independentes: `apps/web/data/web.db` guarda usuários, conversas, mensagens, rascunhos e o estado de cada conversa; `services/tickets/data/tickets.db` guarda chamados e artigos.
+  - SQLite nativo do Node (`node:sqlite`, sem dependência extra) em dois arquivos independentes: `data/app.db` guarda usuários, conversas, mensagens, rascunhos e o estado de cada conversa; `data/service-desk.db` guarda chamados e artigos.
   - Os dois sobrevivem a reinício.
 - **Privacidade:**
   - O id do funcionário vem da sessão (cookie assinado com HMAC) e é injetado no contexto das tools. O LLM nunca escolhe de quem são os chamados.
@@ -70,11 +76,11 @@ services/tickets    Serviço de chamados simulado (Hono + SQLite), separado do a
 
 ## Etapas e commits
 
-1. Scaffold do monorepo, tooling (TS estrito, Vitest, ESLint) e plano.
-2. `packages/domain`: horário útil, SLA, matriz de prioridade, tipos e testes.
-3. `services/tickets`: API, seed (Anexo B), indisponibilidade simulada e testes.
-4. `packages/agent`: cliente com retry, tools, agent Mastra e testes das tools.
-5. `apps/web`: auth, banco, conversas e API de chat com streaming.
+1. Scaffold do projeto Next.js, tooling (TS estrito, Vitest, ESLint) e plano.
+2. `src/domain`: horário útil, SLA, matriz de prioridade, duplicidade, tipos e testes.
+3. `src/service-desk` + `/api/service-desk`: seed (Anexo B), indisponibilidade simulada e testes.
+4. `src/agent`: cliente com retry, tools, agent Mastra e testes das tools.
+5. `src/server`: auth, banco, conversas e API de chat com streaming.
 6. UI do funcionário: login, chat, cards, rascunho, seletor, transparência e perfil.
 7. Console do analista: lista com filtros, histórico, assumir, devolver, encerrar e painel de chamados.
 8. README com arquitetura, decisões, trade-offs e o que faria com mais tempo, mais `.env.example` e verificação ponta a ponta.
