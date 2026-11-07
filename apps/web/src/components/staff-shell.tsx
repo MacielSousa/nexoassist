@@ -1,11 +1,11 @@
-import { BarChart3, Headset, LogOut, Users } from "lucide-react";
+import { BarChart3, Headset, LogOut, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
 import type { User } from "@/lib/types";
 import { NexoMark } from "./nexo-mark";
 import { Avatar, cx } from "./ui";
 
-export type StaffSection = "console" | "reports" | "users";
+export type StaffSection = "console" | "reports" | "users" | "profile";
 
 /** Itens do menu da equipe de TI. Usuários só aparece para admin. */
 export function staffNav(user: User) {
@@ -13,6 +13,7 @@ export function staffNav(user: User) {
     { key: "console" as const, href: "/console", label: "Conversas", Icon: Headset },
     { key: "reports" as const, href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
     ...(user.role === "admin" ? [{ key: "users" as const, href: "/admin/usuarios", label: "Usuários", Icon: Users }] : []),
+    { key: "profile" as const, href: "/perfil", label: "Meu perfil", Icon: UserRound },
   ];
 }
 
@@ -43,7 +44,7 @@ export function StaffShell({ user, active, children }: { user: User; active: Sta
         </nav>
         <div className="flex-1" />
         <div className="flex items-center gap-2.5 border-t border-rule px-2 pt-3.5 pb-1">
-          <Avatar initials={user.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" />
+          <Avatar initials={user.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={user.avatarUrl} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
             <span className="truncate text-[11.5px] text-ink-3">{user.email}</span>

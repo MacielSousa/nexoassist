@@ -3,7 +3,7 @@ import Link from "next/link";
 import { logout } from "@/app/login/actions";
 import type { User } from "@/lib/types";
 import { NexoMark } from "./nexo-mark";
-import { cx } from "./ui";
+import { Avatar, cx } from "./ui";
 
 export function EmployeeShell({
   user,
@@ -47,9 +47,7 @@ export function EmployeeShell({
         </nav>
         <div className="flex-1" />
         <div className="flex items-center gap-2.5 border-t border-rule px-2 pt-3.5 pb-1">
-          <span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12.5px] font-bold text-primary-text">
-            {user.initials}
-          </span>
+          <Avatar initials={user.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={user.avatarUrl} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
             <span className="truncate text-[11.5px] text-ink-3">{user.email}</span>

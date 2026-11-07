@@ -12,6 +12,7 @@ export interface User {
   team: SupportTeam | null;
   active: boolean;
   initials: string;
+  avatarUrl: string | null;
   passwordChangedAt: string;
   createdAt: string;
 }
@@ -53,7 +54,7 @@ export type MessageRole = "user" | "assistant" | "analyst" | "system";
 
 export interface Conversation {
   id: string;
-  employee: { id: string; name: string; email: string; department: string; initials: string };
+  employee: { id: string; name: string; email: string; department: string; initials: string; avatarUrl: string | null };
   status: ConversationStatus;
   assignedAnalyst: { id: string; name: string } | null;
   handoff: {
@@ -89,6 +90,16 @@ export interface TurnTrace {
   error?: string;
 }
 
+/** Arquivo enviado (anexo ou foto). `url` é o caminho na API: use com o prefixo /api. */
+export interface FileInfo {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  kind: "image" | "video" | "document";
+  url: string;
+}
+
 export interface Message {
   id: number;
   role: MessageRole;
@@ -96,6 +107,7 @@ export interface Message {
   content: string;
   steps: string[];
   parts: MessagePart[];
+  attachments: FileInfo[];
   trace: TurnTrace | null;
   createdAt: string;
 }

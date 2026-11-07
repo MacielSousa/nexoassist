@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABEL, type SupportTeam, type User, type UserRole } from "@/lib/types";
 import { postJson } from "../chat/live";
+import { AvatarEditor } from "../profile/avatar-editor";
 import { StaffShell } from "../staff-shell";
 import { Avatar, avatarColors, cx, Pill } from "../ui";
 
@@ -156,7 +157,7 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
                   <tr key={u.id} className={cx("border-t border-rule", !u.active && "text-ink-3")}>
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-3">
-                        <Avatar initials={u.initials} {...avatarColors(u.name)} size={34} />
+                        <Avatar initials={u.initials} {...avatarColors(u.name)} src={u.avatarUrl} size={34} />
                         <span className="flex flex-col">
                           <span className="font-medium text-ink">{u.name}</span>
                           <span className="text-[12.5px] text-ink-3">{u.email}</span>
@@ -222,6 +223,9 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
               </button>
             </div>
 
+            {form.id && users.find((u) => u.id === form.id) && (
+              <AvatarEditor user={users.find((u) => u.id === form.id)!} endpoint={`/api/users/${form.id}/avatar`} onChange={upsert} size={56} />
+            )}
             <Field label="Nome completo">
               <input required minLength={3} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
             </Field>

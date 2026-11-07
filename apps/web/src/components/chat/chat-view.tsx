@@ -8,6 +8,7 @@ import type { ChatStreamEvent, ConversationSnapshot, Message, MessagePart, User 
 import { EmployeeShell } from "../employee-shell";
 import { Pill, TypingDots } from "../ui";
 import { ArticleChips, DraftCard, Options, TicketCard, TicketSelector } from "./cards";
+import { AttachButton, MessageAttachments, PendingAttachments, useAttachmentUploads } from "./attachments";
 import { DecisionPanel } from "./decision-panel";
 import { mergeSnapshot, postJson, readSse, useLiveConversation } from "./live";
 
@@ -49,10 +50,13 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
       : null;
   const pendingDraft = useMemo(() => Object.values(drafts).find((d) => d.status === "pending") ?? null, [drafts]);
 
+  const uploads = useAttachmentUploads(conversation.id);
+  const clearUploads = uploads.clear;
+
   const send = useCallback(
-    async (raw: string) => {
+    async (raw: string, attachmentIds: string[] = []) => {
       const text = raw.trim();
-      if (!text || pending) return;
+      if ((!text && attachmentIds.length === 0) || pending) return;
       setError(null);
       setInput("");
       setPending({ text: "", steps: [] });
@@ -60,7 +64,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
         const res = await fetch("/api/conversations/active/messages", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, attachmentIds }),
         });
         if (!res.ok || !res.body) {
           const data = (await res.json().catch(() => ({}))) as { message?: string };
@@ -70,6 +74,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
           switch (e.type) {
             case "user":
               setSnap((s) => mergeSnapshot(s, { messages: [e.message] }));
+              clearUploads(); // a mensagem (com os anexos) foi salva
               break;
             case "steps":
               setPending((p) => p && { ...p, steps: e.steps });
@@ -98,7 +103,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
         setPending(null);
       }
     },
-    [pending],
+    [pending, clearUploads],
   );
 
   const draftAction = async (id: string, action: "confirm" | "cancel") => {
@@ -132,7 +137,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      void send(input);
+      if (!uploads.uploading) void send(input, uploads.ids);
       return;
     }
     // Atalhos 1–4 para as opções rápidas, com o campo vazio.
@@ -200,13 +205,16 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
               </button>
             </div>
           ) : (
+            <>
+            <PendingAttachments items={uploads.items} onRemove={uploads.remove} />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void send(input);
+                void send(input, uploads.ids);
               }}
-              className="flex min-h-12 items-end gap-2 rounded-xl border border-ink/12 bg-paper py-1.5 pr-1.5 pl-4 focus-within:border-cta"
+              className="flex min-h-12 items-end gap-2 rounded-xl border border-ink/12 bg-paper py-1.5 pr-1.5 pl-2 focus-within:border-cta"
             >
+              <AttachButton onPick={uploads.add} disabled={uploads.full || pending !== null} />
               <textarea
                 ref={inputRef}
                 value={input}
@@ -220,13 +228,14 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
               />
               <button
                 type="submit"
-                disabled={!input.trim() || pending !== null}
+                disabled={(!input.trim() && uploads.ids.length === 0) || pending !== null || uploads.uploading}
                 className="flex h-9 items-center gap-1.5 rounded-md bg-cta px-3 text-[13.5px] font-semibold text-white hover:bg-cta-hover disabled:opacity-50"
               >
                 {pending ? <LoaderCircle size={14} className="animate-spin" /> : <SendHorizontal size={14} />}
                 Enviar
               </button>
             </form>
+            </>
           )}
           <div className="flex items-center justify-between pt-1.5 text-[12.5px] text-ink-3">
             <span>
@@ -301,14 +310,17 @@ function Message({
   message: Message;
   interactive: boolean;
   drafts: ConversationSnapshot["drafts"];
-  onPick: (text: string) => void;
+  onPick: (text: string) => void | Promise<void>;
   onDraft: (id: string, action: "confirm" | "cancel") => Promise<void>;
   onEditDraft: () => void;
 }) {
   if (m.role === "user") {
     return (
-      <div className="flex justify-end">
-        <p className="max-w-[520px] rounded-[12px_12px_4px_12px] bg-ink px-4 py-[11px] text-[14.5px] whitespace-pre-wrap text-white">{m.content}</p>
+      <div className="flex flex-col items-end gap-1.5">
+        {m.content && (
+          <p className="max-w-[520px] rounded-[12px_12px_4px_12px] bg-ink px-4 py-[11px] text-[14.5px] whitespace-pre-wrap text-white">{m.content}</p>
+        )}
+        <MessageAttachments files={m.attachments} />
       </div>
     );
   }
@@ -328,7 +340,8 @@ function Message({
           <span className="font-semibold">{m.author?.name}</span>
           <span className="rounded-md bg-success-soft px-1.5 py-px text-[11px] font-semibold text-success-text">Analista</span>
         </div>
-        <p className="w-fit max-w-[600px] rounded-[4px_12px_12px_12px] bg-human-bubble px-4 py-3 text-[14.5px] whitespace-pre-wrap">{m.content}</p>
+        {m.content && <p className="w-fit max-w-[600px] rounded-[4px_12px_12px_12px] bg-human-bubble px-4 py-3 text-[14.5px] whitespace-pre-wrap">{m.content}</p>}
+        <MessageAttachments files={m.attachments} />
       </div>
     );
   }

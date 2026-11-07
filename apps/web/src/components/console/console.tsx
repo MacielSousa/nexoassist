@@ -106,7 +106,7 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
           </button>
         </form>
         <span title={`${analyst.name} · ${analyst.department}`}>
-          <Avatar initials={analyst.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" size={36} online ring="var(--color-desk)" />
+          <Avatar initials={analyst.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={analyst.avatarUrl} size={36} online ring="var(--color-desk)" />
         </span>
       </nav>
 
@@ -228,7 +228,7 @@ function ListItem({
   return (
     <li>
       <button onClick={onClick} className={cx("flex w-full gap-3 rounded-xl p-2.5 text-left", active ? "bg-desk" : "hover:bg-desk/60")}>
-        <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} size={46} online={online} ring={active ? "var(--color-desk)" : "var(--color-paper)"} />
+        <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} src={c.employee.avatarUrl} size={46} online={online} ring={active ? "var(--color-desk)" : "var(--color-paper)"} />
         <span className={cx("flex min-w-0 flex-1 flex-col gap-[3px] pb-2.5", !active && "border-b border-rule")}>
           <span className="flex items-center gap-2">
             <span className={cx("flex-1 truncate text-[15.5px]", item.unread ? "font-semibold" : "font-medium")}>{c.employee.name}</span>

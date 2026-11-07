@@ -49,6 +49,7 @@ export function Avatar({
   size = 34,
   online,
   ring = "var(--color-paper)",
+  src,
 }: {
   initials: string;
   bg: string;
@@ -56,13 +57,20 @@ export function Avatar({
   size?: number;
   online?: boolean;
   ring?: string;
+  /** Caminho da foto na API (ex.: /files/<id>); sem foto, mostra as iniciais. */
+  src?: string | null;
 }) {
   return (
     <span
       className="relative grid shrink-0 place-items-center rounded-full font-semibold"
       style={{ width: size, height: size, background: bg, color: fg, fontSize: size > 40 ? 15.5 : size > 36 ? 14.5 : 12.5 }}
     >
-      {initials}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- imagem privada servida pelo proxy autenticado
+        <img src={`/api${src}`} alt="" className="size-full rounded-full object-cover" />
+      ) : (
+        initials
+      )}
       {online && (
         <span
           className="absolute right-0 bottom-0 rounded-full bg-success"

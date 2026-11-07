@@ -23,7 +23,8 @@ async function forward(request: Request, ctx: Ctx) {
   const upstream = await fetch(`${API_URL}/${path.map(encodeURIComponent).join("/")}${url.search}`, {
     method: request.method,
     headers,
-    body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.text(),
+    // Binário (não texto): uploads multipart passam intactos.
+    body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.arrayBuffer(),
     signal: request.signal,
     cache: "no-store",
   }).catch(() => null);

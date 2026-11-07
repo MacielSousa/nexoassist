@@ -6,12 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { formatTime, formatWhen } from "@/lib/format";
 import type { ConversationSnapshot, Message, MessagePart, User } from "@/lib/types";
 
+import { AttachButton, MessageAttachments, PendingAttachments, useAttachmentUploads } from "../chat/attachments";
 import { DecisionPanel } from "../chat/decision-panel";
 import { mergeSnapshot, postJson, useLiveConversation } from "../chat/live";
 import { Avatar, avatarColors, cx, Pill } from "../ui";
 import { TicketHistory } from "./ticket-history";
 
-type Action = { action: "take" } | { action: "return" } | { action: "close" } | { action: "message"; text: string };
+type Action = { action: "take" } | { action: "return" } | { action: "close" } | { action: "message"; text: string; attachmentIds: string[] };
 
 export function ConversationPanel({ conversationId, analyst, onChange }: { conversationId: string; analyst: User; onChange: () => void }) {
   const [snap, setSnap] = useState<ConversationSnapshot | null>(null);
@@ -19,6 +20,7 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
   const [busy, setBusy] = useState<string | null>(null);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const uploads = useAttachmentUploads(conversationId);
 
   useEffect(() => {
     fetch(`/api/conversations/${conversationId}`, { cache: "no-store" })
@@ -51,8 +53,11 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
     setBusy(body.action);
     setError(null);
     try {
-      setSnap(mergeSnapshot(snap, await postJson<ConversationSnapshot>(`/api/console/conversations/${conversationId}/${body.action === "message" ? "messages" : body.action}`, body.action === "message" ? { text: body.text } : undefined)));
-      if (body.action === "message") setText("");
+      setSnap(mergeSnapshot(snap, await postJson<ConversationSnapshot>(`/api/console/conversations/${conversationId}/${body.action === "message" ? "messages" : body.action}`, body.action === "message" ? { text: body.text, attachmentIds: body.attachmentIds } : undefined)));
+      if (body.action === "message") {
+        setText("");
+        uploads.clear();
+      }
       onChange();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
@@ -65,7 +70,7 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
     <>
       <section className="flex min-w-0 flex-1 flex-col bg-console">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-rule bg-paper pr-4 pl-5">
-          <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} size={40} />
+          <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} src={c.employee.avatarUrl} size={40} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-[15.5px] font-semibold">{c.employee.name}</span>
             <span className="truncate text-[12.5px] text-ink-3">
@@ -162,13 +167,16 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
             </div>
           )}
           {mine ? (
+            <>
+            <PendingAttachments items={uploads.items} onRemove={uploads.remove} />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (text.trim()) void act({ action: "message", text });
+                if ((text.trim() || uploads.ids.length) && !uploads.uploading) void act({ action: "message", text, attachmentIds: uploads.ids });
               }}
-              className="flex h-11 items-center gap-3"
+              className="flex h-11 items-center gap-2"
             >
+              <AttachButton onPick={uploads.add} disabled={uploads.full || busy !== null} />
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -180,12 +188,13 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
               />
               <button
                 aria-label="Enviar"
-                disabled={!text.trim() || busy !== null}
+                disabled={(!text.trim() && uploads.ids.length === 0) || busy !== null || uploads.uploading}
                 className="grid size-11 shrink-0 place-items-center rounded-full bg-cta text-white hover:bg-cta-hover disabled:opacity-50"
               >
                 <ArrowUp size={18} />
               </button>
             </form>
+            </>
           ) : c.status === "closed" ? (
             <p className="py-2 text-center text-[13.5px] text-ink-3">Conversa encerrada.</p>
           ) : (
@@ -242,7 +251,11 @@ function ConsoleMessage({ m, grouped }: { m: Message; grouped: boolean }) {
     return (
       <div className={cx("flex", grouped ? "pt-[3px]" : "pt-4")}>
         <p className={cx("flex max-w-[520px] items-end gap-2.5 bg-paper px-3 pt-2 pb-1.5 text-[14.5px]", grouped ? "rounded-xl" : "rounded-[4px_12px_12px_12px]")}>
-          <span className="whitespace-pre-wrap">{m.content}</span>
+          <span className="flex flex-col gap-1.5">
+            {m.content && <span className="whitespace-pre-wrap">{m.content}</span>}
+        <MessageAttachments files={m.attachments} />
+            <MessageAttachments files={m.attachments} />
+          </span>
           {time}
         </p>
       </div>
