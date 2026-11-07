@@ -7,7 +7,7 @@ import type { ReportFilters, ReportOverview, ReportTicketsPage } from "@/lib/typ
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const user = await requireUser("admin", "analyst");
+  const user = await requireUser("reports.view");
   const to = todayBrt();
   const filters: ReportFilters = { from: shiftDay(to, -29), to };
   const qs = new URLSearchParams({ from: filters.from, to: filters.to });

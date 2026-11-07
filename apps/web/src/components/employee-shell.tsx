@@ -2,6 +2,7 @@ import { ChevronRight, LogOut, MessageSquare, UserRound } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
 import type { User } from "@/lib/types";
+import { staffNav } from "./staff-shell";
 import { NexoMark } from "./nexo-mark";
 import { Avatar, cx } from "./ui";
 
@@ -19,8 +20,10 @@ export function EmployeeShell({
 }) {
   const nav = [
     { href: "/chat", key: "chat", label: "Atendimento", Icon: MessageSquare },
+    // Telas extras liberadas por permissão (ex.: relatórios concedidos a um funcionário).
+    ...staffNav(user).filter((i) => i.key !== "profile"),
     { href: "/perfil", key: "perfil", label: "Meu perfil", Icon: UserRound },
-  ] as const;
+  ];
 
   return (
     <div className="flex h-dvh bg-paper">

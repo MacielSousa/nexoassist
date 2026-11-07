@@ -1,0 +1,70 @@
+"use client";
+
+import { Check } from "lucide-react";
+import type { Permission, PermissionInfo } from "@/lib/types";
+import { cx } from "../ui";
+
+/**
+ * Lista de permissões agrupada, com caixas de seleção. Permissões "travadas" aparecem
+ * marcadas e desabilitadas (ex.: já vêm da role do usuário) com uma nota.
+ */
+export function PermissionChecklist({
+  catalog,
+  selected,
+  onToggle,
+  locked = {},
+  disabled = () => false,
+}: {
+  catalog: PermissionInfo[];
+  selected: Permission[];
+  onToggle: (p: Permission) => void;
+  /** Permissão → motivo de estar travada (aparece marcada). */
+  locked?: Partial<Record<Permission, string>>;
+  /** Permissões que quem está editando não pode conceder. */
+  disabled?: (p: Permission) => boolean;
+}) {
+  const groups = [...new Set(catalog.map((p) => p.group))];
+  return (
+    <div className="flex flex-col gap-4">
+      {groups.map((group) => (
+        <fieldset key={group} className="flex flex-col gap-1">
+          <legend className="pb-1 text-[12px] font-semibold tracking-wide text-ink-3 uppercase">{group}</legend>
+          {catalog
+            .filter((p) => p.group === group)
+            .map((p) => {
+              const lockedReason = locked[p.key];
+              const checked = Boolean(lockedReason) || selected.includes(p.key);
+              const isDisabled = Boolean(lockedReason) || disabled(p.key);
+              return (
+                <label
+                  key={p.key}
+                  className={cx(
+                    "flex items-start gap-2.5 rounded-lg px-2 py-1.5 text-[13.5px]",
+                    isDisabled ? "cursor-default" : "cursor-pointer hover:bg-desk",
+                  )}
+                >
+                  <input type="checkbox" className="peer sr-only" checked={checked} disabled={isDisabled} onChange={() => onToggle(p.key)} />
+                  <span
+                    className={cx(
+                      "mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-md border peer-focus-visible:outline-2 peer-focus-visible:outline-cta",
+                      checked ? (lockedReason ? "border-ink/25 bg-ink/25" : "border-cta bg-cta") : "border-ink/20 bg-paper",
+                    )}
+                  >
+                    {checked && <Check size={12} strokeWidth={3} className="text-white" />}
+                  </span>
+                  <span className="flex flex-col">
+                    <span className={cx(isDisabled && !lockedReason && "text-ink-3")}>{p.description}</span>
+                    <span className="text-[11.5px] text-ink-3">
+                      <code>{p.key}</code>
+                      {lockedReason && ` · ${lockedReason}`}
+                      {!lockedReason && disabled(p.key) && " · você não tem esta permissão para conceder"}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+        </fieldset>
+      ))}
+    </div>
+  );
+}

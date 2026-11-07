@@ -1,13 +1,47 @@
 // Contrato com a API (apps/api). Espelha os DTOs documentados em /api-docs.
 
-export type UserRole = "admin" | "analyst" | "employee";
+/** Permissões do catálogo da API (GET /permissions). */
+export type Permission =
+  | "chat.use"
+  | "tickets.view_own"
+  | "tickets.create"
+  | "tickets.view_all"
+  | "tickets.manage"
+  | "console.view"
+  | "console.attend"
+  | "reports.view"
+  | "users.view"
+  | "users.manage"
+  | "roles.manage";
+
+export interface PermissionInfo {
+  key: Permission;
+  group: string;
+  description: string;
+}
+
+export interface Role {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  isSystem: boolean;
+  permissions: Permission[];
+  userCount?: number;
+}
+
+export const can = (user: { permissions: Permission[] }, ...permissions: Permission[]) => permissions.some((p) => user.permissions.includes(p));
 export type SupportTeam = "Suporte N1" | "Suporte N2";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: { id: string; key: string; name: string };
+  /** Permissões efetivas (role + extras). */
+  permissions: Permission[];
+  /** Concedidas direto ao usuário, além das da role. */
+  extraPermissions: Permission[];
   department: string;
   team: SupportTeam | null;
   active: boolean;
@@ -158,11 +192,6 @@ export const AFFECTED_LABEL: Record<Affected, string> = {
   empresa: "Toda a empresa",
 };
 
-export const ROLE_LABEL: Record<UserRole, string> = {
-  admin: "Admin",
-  analyst: "Analista",
-  employee: "Funcionário",
-};
 
 export const CATEGORIES: Category[] = ["Acesso", "Rede e VPN", "Hardware", "Software", "E-mail", "Outros"];
 export const PRIORITIES: Priority[] = ["Crítica", "Alta", "Média", "Baixa"];

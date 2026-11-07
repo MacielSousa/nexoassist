@@ -5,7 +5,7 @@ import type { ConversationSnapshot } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function ChatPage() {
-  const user = await requireUser("employee");
+  const user = await requireUser("chat.use");
   const snapshot = await apiFetch<ConversationSnapshot>("/conversations/active");
   return <ChatView user={user} initial={snapshot} />;
 }

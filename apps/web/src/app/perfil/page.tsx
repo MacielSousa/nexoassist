@@ -3,6 +3,7 @@ import { EmployeeShell } from "@/components/employee-shell";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { StaffShell } from "@/components/staff-shell";
 import { requireUser } from "@/lib/api";
+import { can } from "@/lib/types";
 import { formatRelative } from "@/lib/format";
 import { ChangePasswordForm } from "./change-password-form";
 
@@ -37,7 +38,9 @@ export default async function ProfilePage() {
     </div>
   );
 
-  return user.role === "employee" ? (
+  // Quem tem alguma tela da equipe de TI usa o layout da equipe; os demais, o do chat.
+  const staff = can(user, "console.view", "reports.view", "users.view", "users.manage", "roles.manage");
+  return !staff ? (
     <EmployeeShell user={user} active="perfil">
       {content}
     </EmployeeShell>

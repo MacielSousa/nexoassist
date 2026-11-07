@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ACCESS_COOKIE, API_URL } from "./session";
-import type { User, UserRole } from "./types";
+import { can, type Permission, type User } from "./types";
 
 // Chamadas à API feitas pelo servidor do Next (páginas e server actions).
 
@@ -41,14 +41,21 @@ export async function currentUser(): Promise<User | null> {
   }
 }
 
-export function homeFor(role: UserRole) {
-  return role === "employee" ? "/chat" : role === "analyst" ? "/console" : "/admin/usuarios";
+/** Tela inicial conforme as permissões (a primeira que a pessoa pode usar). */
+export function homeFor(user: User): string {
+  if (can(user, "users.manage")) return "/admin/usuarios";
+  if (can(user, "console.view")) return "/console";
+  if (can(user, "chat.use")) return "/chat";
+  if (can(user, "reports.view")) return "/relatorios";
+  if (can(user, "users.view")) return "/admin/usuarios";
+  if (can(user, "roles.manage")) return "/admin/roles";
+  return "/perfil";
 }
 
-/** Exige sessão (e, opcionalmente, um dos perfis). Redireciona caso contrário. */
-export async function requireUser(...roles: UserRole[]): Promise<User> {
+/** Exige sessão e, se informadas, pelo menos uma das permissões. Redireciona caso contrário. */
+export async function requireUser(...permissions: Permission[]): Promise<User> {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (roles.length && !roles.includes(user.role)) redirect(homeFor(user.role));
+  if (permissions.length && !can(user, ...permissions)) redirect(homeFor(user));
   return user;
 }

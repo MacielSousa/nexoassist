@@ -1,20 +1,22 @@
-import { BarChart3, Headset, LogOut, UserRound, Users } from "lucide-react";
+import { BarChart3, Headset, LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
-import type { User } from "@/lib/types";
+import { can, type User } from "@/lib/types";
 import { NexoMark } from "./nexo-mark";
 import { Avatar, cx } from "./ui";
 
-export type StaffSection = "console" | "reports" | "users" | "profile";
+export type StaffSection = "console" | "reports" | "users" | "roles" | "profile";
 
-/** Itens do menu da equipe de TI. Usuários só aparece para admin. */
+/** Itens do menu da equipe de TI, conforme as permissões de quem está logado. */
 export function staffNav(user: User) {
-  return [
-    { key: "console" as const, href: "/console", label: "Conversas", Icon: Headset },
-    { key: "reports" as const, href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
-    ...(user.role === "admin" ? [{ key: "users" as const, href: "/admin/usuarios", label: "Usuários", Icon: Users }] : []),
+  const items = [
+    can(user, "console.view") && { key: "console" as const, href: "/console", label: "Conversas", Icon: Headset },
+    can(user, "reports.view") && { key: "reports" as const, href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
+    can(user, "users.view", "users.manage") && { key: "users" as const, href: "/admin/usuarios", label: "Usuários", Icon: Users },
+    can(user, "roles.manage") && { key: "roles" as const, href: "/admin/roles", label: "Roles", Icon: ShieldCheck },
     { key: "profile" as const, href: "/perfil", label: "Meu perfil", Icon: UserRound },
   ];
+  return items.filter((i) => i !== false);
 }
 
 /** Layout das telas de analistas e admins (relatórios, usuários). */

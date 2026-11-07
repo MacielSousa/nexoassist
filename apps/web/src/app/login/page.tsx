@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   const user = await currentUser();
-  if (user) redirect(homeFor(user.role));
+  if (user) redirect(homeFor(user));
 
   return (
     <main className="flex min-h-screen">

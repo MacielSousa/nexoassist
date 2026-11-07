@@ -34,7 +34,7 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   // Sem "manter conectado", o refresh token dura só a sessão do navegador.
   const refreshOptions = cookieOptions(REFRESH_MAX_AGE);
   jar.set(REFRESH_COOKIE, data.refreshToken, remember ? refreshOptions : { ...refreshOptions, maxAge: undefined });
-  redirect(homeFor(data.user.role));
+  redirect(homeFor(data.user));
 }
 
 export async function logout() {

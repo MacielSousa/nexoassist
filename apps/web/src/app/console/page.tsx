@@ -5,7 +5,7 @@ import type { ConsoleItem } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function ConsolePage() {
-  const analyst = await requireUser("analyst", "admin");
+  const analyst = await requireUser("console.view");
   const items = await apiFetch<ConsoleItem[]>("/console/conversations");
   return <Console analyst={analyst} initialItems={items} />;
 }
