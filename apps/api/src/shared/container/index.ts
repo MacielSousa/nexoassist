@@ -22,6 +22,9 @@ import type { IConversationsRepository } from "@modules/support/repositories/ICo
 import type { IDraftsRepository } from "@modules/support/repositories/IDraftsRepository";
 import type { IMessagesRepository } from "@modules/support/repositories/IMessagesRepository";
 
+import { ReportsRepository } from "@modules/reports/infra/typeorm/repositories/ReportsRepository";
+import type { IReportsRepository } from "@modules/reports/repositories/IReportsRepository";
+
 import "./providers";
 
 // Injeção de dependências: cada interface aponta para a implementação usada em produção.
@@ -54,3 +57,6 @@ container.registerSingleton<IMessagesRepository>("MessagesRepository", MessagesR
 container.registerSingleton<IDraftsRepository>("DraftsRepository", DraftsRepository);
 container.registerSingleton<IConversationEventsProvider>("ConversationEventsProvider", InMemoryConversationEvents);
 container.registerSingleton<IAgentRunner>("AgentRunner", MastraAgentRunner);
+
+// reports
+container.registerSingleton<IReportsRepository>("ReportsRepository", ReportsRepository);

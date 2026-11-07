@@ -48,6 +48,21 @@ export class Conversation {
   @Column({ name: "resolved_by", type: "varchar", nullable: true })
   resolvedBy: "agent" | "analyst" | null;
 
+  // ---- Rastreio para relatórios ----
+
+  /** Último analista que assumiu (continua preenchido depois de devolver ao agent). */
+  @Column({ name: "handled_by_id", type: "uuid", nullable: true })
+  handledById: string | null;
+
+  @Column({ name: "taken_at", type: "timestamptz", nullable: true })
+  takenAt: Date | null;
+
+  @Column({ name: "closed_at", type: "timestamptz", nullable: true })
+  closedAt: Date | null;
+
+  @Column({ name: "closed_by_id", type: "uuid", nullable: true })
+  closedById: string | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 

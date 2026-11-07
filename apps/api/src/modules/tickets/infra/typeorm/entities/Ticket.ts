@@ -53,6 +53,10 @@ export class Ticket {
   @Column({ name: "resolved_at", type: "timestamptz", nullable: true })
   resolvedAt: Date | null;
 
+  /** Analista que resolveu ou fechou (para relatórios). */
+  @Column({ name: "resolved_by_id", type: "uuid", nullable: true })
+  resolvedById: string | null;
+
   /** Garante que confirmar o mesmo rascunho duas vezes não crie dois chamados. */
   @Column({ name: "idempotency_key", type: "varchar", nullable: true, unique: true })
   idempotencyKey: string | null;

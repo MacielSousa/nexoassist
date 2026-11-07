@@ -46,7 +46,7 @@ export class ConsoleActionsUseCase {
     if (conversation.status === "human" && conversation.assignedAnalystId !== analyst.id) {
       throw new AppError(`${conversation.assignedAnalyst?.name} já está atendendo.`, 409);
     }
-    Object.assign(conversation, { status: "human", assignedAnalystId: analyst.id, assignedAnalyst: analyst });
+    Object.assign(conversation, { status: "human", assignedAnalystId: analyst.id, assignedAnalyst: analyst, handledById: analyst.id, takenAt: new Date() });
     await this.conversations.save(conversation);
     await this.timeline.post({ conversationId: id, role: "system", content: `${analyst.name} assumiu · agent pausado` });
     if (conversation.handoffTicket) {
@@ -78,7 +78,7 @@ export class ConsoleActionsUseCase {
     const { conversation, analyst } = await this.load(actor, id);
     this.ensureAssignedTo(conversation, analyst.id);
     await this.timeline.post({ conversationId: id, role: "system", content: `Atendimento encerrado por ${analyst.name}` });
-    Object.assign(conversation, { status: "closed", resolvedBy: "analyst" });
+    Object.assign(conversation, { status: "closed", resolvedBy: "analyst", closedAt: new Date(), closedById: analyst.id });
     await this.conversations.save(conversation);
     this.timeline.notify(id);
     return this.snapshot.build(id);

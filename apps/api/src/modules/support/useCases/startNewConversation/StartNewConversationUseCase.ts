@@ -20,6 +20,7 @@ export class StartNewConversationUseCase {
     if (current) {
       current.status = "closed";
       current.resolvedBy = "agent";
+      current.closedAt = new Date();
       await this.conversations.save(current);
     }
     const conversation = await this.conversations.create(actor.id);

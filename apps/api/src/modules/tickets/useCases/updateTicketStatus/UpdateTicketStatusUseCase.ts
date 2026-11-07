@@ -21,7 +21,9 @@ export class UpdateTicketStatusUseCase {
     if (ticket.status === status) return TicketMap.toDTO(ticket);
 
     ticket.status = status;
-    ticket.resolvedAt = status === "resolvido" || status === "fechado" ? new Date() : null;
+    const finished = status === "resolvido" || status === "fechado";
+    ticket.resolvedAt = finished ? new Date() : null;
+    ticket.resolvedById = finished ? actor.id : null;
     if (status === "em_andamento") ticket.assignedAnalystId = actor.id;
 
     const analyst = await this.usersRepository.findById(actor.id);

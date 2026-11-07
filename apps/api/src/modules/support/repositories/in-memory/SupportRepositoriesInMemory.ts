@@ -26,6 +26,7 @@ export class ConversationsRepositoryInMemory implements IConversationsRepository
     const c = Object.assign(new Conversation(), {
       id: randomUUID(), employeeId, status: "agent", assignedAnalystId: null, handoffReason: null, handoffSummary: null,
       handoffTicket: null, handoffGroup: null, handoffConfidence: null, handoffAt: null, resolvedBy: null, createdAt: now, updatedAt: now,
+      handledById: null, takenAt: null, closedAt: null, closedById: null,
     });
     this.conversations.push(c);
     return this.hydrate(c);

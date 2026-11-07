@@ -16,7 +16,7 @@ export class TicketsRepositoryInMemory implements ITicketsRepository {
 
   async create(data: ICreateTicketDTO) {
     const now = new Date();
-    const ticket = Object.assign(new Ticket(), { ...data, id: randomUUID(), assignedAnalystId: null, resolvedAt: null, createdAt: now, updatedAt: now });
+    const ticket = Object.assign(new Ticket(), { ...data, id: randomUUID(), assignedAnalystId: null, resolvedAt: null, resolvedById: null, createdAt: now, updatedAt: now });
     this.tickets.push(ticket);
     return ticket;
   }

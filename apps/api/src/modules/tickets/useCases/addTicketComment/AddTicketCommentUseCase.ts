@@ -30,6 +30,7 @@ export class AddTicketCommentUseCase {
       if (!canReopen(ticket)) throw new AppError("Só dá para reabrir chamados resolvidos há até 7 dias.", 409);
       ticket.status = "aberto";
       ticket.resolvedAt = null;
+      ticket.resolvedById = null;
     } else if (!isOpen(ticket.status)) {
       throw new AppError("Esse chamado está encerrado. Abra um novo ou reabra se foi resolvido há até 7 dias.", 409);
     } else if (ticket.status === "aguardando_funcionario" && !isStaff(actor)) {
