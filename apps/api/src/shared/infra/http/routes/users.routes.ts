@@ -5,7 +5,9 @@ import { CreateUserController } from "@modules/accounts/useCases/createUser/Crea
 import { ListUsersController } from "@modules/accounts/useCases/listUsers/ListUsersController";
 import { ProfileUserController } from "@modules/accounts/useCases/profileUser/ProfileUserController";
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/UpdateUserController";
+import { FilesController } from "@modules/files/useCases/FilesController";
 import { defineRoute } from "../defineRoute";
+import { uploadSingleFile } from "../middlewares/uploadSingleFile";
 
 export const usersRoutes = Router();
 
@@ -19,6 +21,42 @@ defineRoute(usersRoutes, "/users", {
   auth: "any",
   responses: { 200: { description: "Usuário", schema: UserResponseSchema } },
   handler: profile.show,
+});
+
+defineRoute(usersRoutes, "/users", {
+  method: "patch",
+  path: "/me",
+  tag: "Perfil",
+  summary: "Editar o próprio perfil (nome, área e e-mail)",
+  description: "Trocar o e-mail exige a senha atual (currentPassword) e encerra as outras sessões.",
+  auth: "any",
+  request: { body: ProfileUserController.updateProfileBody },
+  responses: { 200: { description: "Usuário atualizado", schema: UserResponseSchema } },
+  handler: profile.update,
+});
+
+defineRoute(usersRoutes, "/users", {
+  method: "put",
+  path: "/me/avatar",
+  tag: "Perfil",
+  summary: "Enviar a própria foto de perfil",
+  description: "Imagem JPG, PNG, WEBP ou GIF, até 5 MB.",
+  auth: "any",
+  request: { body: FilesController.uploadBody },
+  bodyContentType: "multipart/form-data",
+  middlewares: [uploadSingleFile],
+  responses: { 200: { description: "Usuário com a nova foto", schema: UserResponseSchema } },
+  handler: profile.updateAvatar,
+});
+
+defineRoute(usersRoutes, "/users", {
+  method: "delete",
+  path: "/me/avatar",
+  tag: "Perfil",
+  summary: "Remover a própria foto de perfil",
+  auth: "any",
+  responses: { 200: { description: "Usuário sem foto", schema: UserResponseSchema } },
+  handler: profile.removeAvatar,
 });
 
 defineRoute(usersRoutes, "/users", {
@@ -64,4 +102,28 @@ defineRoute(usersRoutes, "/users", {
   request: { params: UpdateUserController.params, body: UpdateUserController.body },
   responses: { 200: { description: "Usuário atualizado", schema: UserResponseSchema } },
   handler: new UpdateUserController().handle,
+});
+
+defineRoute(usersRoutes, "/users", {
+  method: "put",
+  path: "/:id/avatar",
+  tag: "Usuários",
+  summary: "Trocar a foto de perfil de um usuário",
+  auth: ["admin"],
+  request: { params: ProfileUserController.userParams, body: FilesController.uploadBody },
+  bodyContentType: "multipart/form-data",
+  middlewares: [uploadSingleFile],
+  responses: { 200: { description: "Usuário com a nova foto", schema: UserResponseSchema } },
+  handler: profile.updateAvatar,
+});
+
+defineRoute(usersRoutes, "/users", {
+  method: "delete",
+  path: "/:id/avatar",
+  tag: "Usuários",
+  summary: "Remover a foto de perfil de um usuário",
+  auth: ["admin"],
+  request: { params: ProfileUserController.userParams },
+  responses: { 200: { description: "Usuário sem foto", schema: UserResponseSchema } },
+  handler: profile.removeAvatar,
 });

@@ -63,7 +63,7 @@ export class MessagesRepositoryInMemory implements IMessagesRepository {
 
   async create(data: ICreateMessageDTO) {
     const m = Object.assign(new Message(), {
-      authorId: null, authorName: null, steps: [], parts: [], trace: null, ...data, id: ++this.seq, createdAt: new Date(),
+      authorId: null, authorName: null, steps: [], parts: [], attachments: [], trace: null, ...data, id: ++this.seq, createdAt: new Date(),
     });
     this.messages.push(m);
     return m;

@@ -1,6 +1,8 @@
 import { inject, injectable } from "tsyringe";
 import type { IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
+import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
+import { resolveAttachments } from "@modules/files/utils/resolveAttachments";
 import type { IServiceDeskProvider } from "@modules/tickets/providers/ServiceDeskProvider/IServiceDeskProvider";
 import type { IAgentRunner } from "@modules/support/agent/AgentRunner";
 import { buildHistory } from "@modules/support/agent/buildHistory";
@@ -25,6 +27,8 @@ export type SendMessageEvent =
 interface IRequest {
   actor: IActor;
   text: string;
+  /** Anexos já enviados (POST /conversations/:id/attachments). */
+  attachmentIds?: string[];
   emit: (event: SendMessageEvent) => void;
   signal?: AbortSignal;
 }
@@ -47,12 +51,15 @@ export class SendMessageUseCase {
     @inject("AgentRunner") private agent: IAgentRunner,
     @inject(ConversationTimeline) private timeline: ConversationTimeline,
     @inject(ConversationSnapshot) private snapshot: ConversationSnapshot,
+    @inject("FilesRepository") private files: IFilesRepository,
   ) {}
 
-  async execute({ actor, text, emit, signal }: IRequest): Promise<void> {
+  async execute({ actor, text, attachmentIds = [], emit, signal }: IRequest): Promise<void> {
     if (actor.role !== "employee") throw new AppError("O chat é para funcionários.", 403);
     const content = text.trim();
-    if (!content || content.length > 2000) throw new AppError("A mensagem precisa ter entre 1 e 2000 caracteres.", 422);
+    if ((!content && attachmentIds.length === 0) || content.length > 2000) {
+      throw new AppError("Escreva uma mensagem (até 2000 caracteres) ou envie um anexo.", 422);
+    }
 
     const employee = await this.users.findById(actor.id);
     if (!employee) throw new AppError("Usuário não encontrado.", 404);
@@ -65,7 +72,8 @@ export class SendMessageUseCase {
     runningTurns.add(conversation.id);
 
     try {
-      const userMessage = await this.timeline.post({ conversationId: conversation.id, role: "user", authorId: employee.id, authorName: employee.name, content });
+      const attachments = await resolveAttachments(this.files, employee.id, conversation.id, attachmentIds);
+      const userMessage = await this.timeline.post({ conversationId: conversation.id, role: "user", authorId: employee.id, authorName: employee.name, content, attachments });
       emit({ type: "user", message: ConversationMap.messageToDTO(userMessage) });
 
       if (conversation.status !== "agent") {

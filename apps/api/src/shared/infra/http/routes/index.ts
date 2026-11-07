@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { filesRoutes } from "./files.routes";
 import { reportsRoutes } from "./reports.routes";
 import { sessionsRoutes } from "./sessions.routes";
 import { consoleRoutes, conversationsRoutes, draftsRoutes } from "./support.routes";
@@ -15,3 +16,4 @@ router.use("/conversations", conversationsRoutes);
 router.use("/drafts", draftsRoutes);
 router.use("/console", consoleRoutes);
 router.use("/reports", reportsRoutes);
+router.use("/files", filesRoutes);

@@ -29,6 +29,10 @@ export class User {
   @Column({ type: "boolean", default: true })
   active: boolean;
 
+  /** Foto de perfil (tabela files). */
+  @Column({ name: "avatar_file_id", type: "uuid", nullable: true })
+  avatarFileId: string | null;
+
   @Column({ name: "password_changed_at", type: "timestamptz" })
   passwordChangedAt: Date;
 

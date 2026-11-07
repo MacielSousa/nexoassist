@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response, Router } from "express";
+import type { NextFunction, Request, RequestHandler, Response, Router } from "express";
 import type { ZodObject, ZodType } from "zod";
 import type { UserRole } from "@modules/accounts/dtos/UserRole";
 import { ErrorSchema, registry } from "./docs/openapi";
@@ -17,6 +17,10 @@ export interface RouteSpec {
   /** false = rota pública; "any" = qualquer usuário autenticado; lista = só esses perfis. */
   auth: false | "any" | UserRole[];
   request?: { body?: ZodType; query?: ZodObject; params?: ZodObject };
+  /** Content-Type do corpo (padrão application/json; uploads usam multipart/form-data). */
+  bodyContentType?: string;
+  /** Middlewares extras depois da autenticação (ex.: upload de arquivo). */
+  middlewares?: RequestHandler[];
   /** Respostas de sucesso documentadas. Os erros comuns são adicionados automaticamente. */
   responses: Record<number, { description: string; schema?: ZodType; contentType?: string }>;
   handler: (request: Request, response: Response, next: NextFunction) => unknown;
@@ -46,7 +50,7 @@ export function defineRoute(router: Router, prefix: string, spec: RouteSpec) {
     request: {
       params: spec.request?.params,
       query: spec.request?.query,
-      body: spec.request?.body ? { content: { "application/json": { schema: spec.request.body } } } : undefined,
+      body: spec.request?.body ? { content: { [spec.bodyContentType ?? "application/json"]: { schema: spec.request.body } } } : undefined,
     },
     responses: Object.fromEntries(
       Object.entries({ ...spec.responses, ...errors }).map(([status, r]) => [
@@ -59,5 +63,5 @@ export function defineRoute(router: Router, prefix: string, spec: RouteSpec) {
   const guards = [];
   if (spec.auth) guards.push(ensureAuthenticated);
   if (Array.isArray(spec.auth)) guards.push(ensureRole(...spec.auth));
-  router[spec.method](spec.path, ...guards, spec.handler);
+  router[spec.method](spec.path, ...guards, ...(spec.middlewares ?? []), spec.handler);
 }

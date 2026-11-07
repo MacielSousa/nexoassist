@@ -2,6 +2,7 @@ import { RequestContext } from "@mastra/core/request-context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IActor } from "@modules/accounts/dtos/IActor";
 import { UsersRepositoryInMemory } from "@modules/accounts/repositories/in-memory/UsersRepositoryInMemory";
+import { FilesRepositoryInMemory } from "@modules/files/repositories/in-memory/FilesRepositoryInMemory";
 import { LegacyServiceDeskProvider } from "@modules/tickets/providers/ServiceDeskProvider/implementations/LegacyServiceDeskProvider";
 import { ArticlesRepositoryInMemory } from "@modules/tickets/repositories/in-memory/ArticlesRepositoryInMemory";
 import { TicketsRepositoryInMemory } from "@modules/tickets/repositories/in-memory/TicketsRepositoryInMemory";
@@ -25,6 +26,7 @@ let drafts: DraftsRepositoryInMemory;
 let serviceDesk: LegacyServiceDeskProvider;
 let timeline: ConversationTimeline;
 let snapshot: ConversationSnapshot;
+let files: FilesRepositoryInMemory;
 let ana: IActor;
 let rafael: IActor;
 
@@ -39,7 +41,7 @@ const tool = (t: { execute?: (i: never, c: never) => Promise<unknown> }, input: 
 
 function sendMessage(run: RunAgentTurn, configured = true) {
   const agent: IAgentRunner = { isConfigured: () => configured, run };
-  return new SendMessageUseCase(conversations, messages, drafts, users, serviceDesk, agent, timeline, snapshot);
+  return new SendMessageUseCase(conversations, messages, drafts, users, serviceDesk, agent, timeline, snapshot, files);
 }
 
 const vpnDraft = {
@@ -62,6 +64,7 @@ beforeEach(async () => {
   serviceDesk = new LegacyServiceDeskProvider(tickets, new ArticlesRepositoryInMemory(), users, { failureRate: 0, outage: null, latencyMs: [0, 0] });
   timeline = new ConversationTimeline(messages, conversations, new InMemoryConversationEvents());
   snapshot = new ConversationSnapshot(conversations, messages, drafts);
+  files = new FilesRepositoryInMemory();
   const a = await users.create({ name: "Ana Souza", email: "ana@nexo.com.br", password: "x", role: "employee", department: "Financeiro" });
   const r = await users.create({ name: "Rafael Lima", email: "rafael@nexo.com.br", password: "x", role: "analyst", department: "TI", team: "Suporte N2" });
   ana = { id: a.id, role: "employee" };
@@ -122,7 +125,7 @@ describe("Atendimento com o agent", () => {
   it("pausa o agent enquanto o analista atende e retoma ao devolver", async () => {
     const run = vi.fn<RunAgentTurn>(async () => ({ text: "ok", trace }));
     const conversation = await conversations.create(ana.id);
-    const consoleActions = new ConsoleActionsUseCase(conversations, users, serviceDesk, timeline, snapshot);
+    const consoleActions = new ConsoleActionsUseCase(conversations, users, serviceDesk, timeline, snapshot, files);
 
     await consoleActions.takeOver(rafael, conversation.id);
     await sendMessage(run).execute({ actor: ana, text: "Oi, alguém aí?", emit: () => undefined });
@@ -137,7 +140,7 @@ describe("Atendimento com o agent", () => {
 
   it("só quem assumiu responde e encerra", async () => {
     const conversation = await conversations.create(ana.id);
-    const consoleActions = new ConsoleActionsUseCase(conversations, users, serviceDesk, timeline, snapshot);
+    const consoleActions = new ConsoleActionsUseCase(conversations, users, serviceDesk, timeline, snapshot, files);
     await expect(consoleActions.reply(rafael, conversation.id, "oi")).rejects.toMatchObject({ statusCode: 409 });
     await expect(consoleActions.takeOver(ana, conversation.id)).rejects.toMatchObject({ statusCode: 403 });
   });

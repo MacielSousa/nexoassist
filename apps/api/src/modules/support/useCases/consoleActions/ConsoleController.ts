@@ -6,7 +6,7 @@ import { ConsoleActionsUseCase } from "./ConsoleActionsUseCase";
 
 export class ConsoleController {
   static params = z.object({ id: z.uuid() });
-  static replyBody = z.object({ text: z.string().trim().min(1).max(2000) });
+  static replyBody = z.object({ text: z.string().trim().max(2000).default(""), attachmentIds: z.array(z.uuid()).max(5).default([]) });
 
   async list(_request: Request, response: Response) {
     return response.json(await container.resolve(ListConsoleConversationsUseCase).execute());
@@ -19,8 +19,8 @@ export class ConsoleController {
 
   async reply(request: Request, response: Response) {
     const { id } = ConsoleController.params.parse(request.params);
-    const { text } = ConsoleController.replyBody.parse(request.body);
-    return response.json(await container.resolve(ConsoleActionsUseCase).reply(request.user, id, text));
+    const { text, attachmentIds } = ConsoleController.replyBody.parse(request.body);
+    return response.json(await container.resolve(ConsoleActionsUseCase).reply(request.user, id, text, attachmentIds));
   }
 
   async returnToAgent(request: Request, response: Response) {

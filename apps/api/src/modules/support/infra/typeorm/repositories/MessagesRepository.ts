@@ -11,7 +11,7 @@ export class MessagesRepository implements IMessagesRepository {
   }
 
   create(data: ICreateMessageDTO): Promise<Message> {
-    return this.repository.save(this.repository.create({ steps: [], parts: [], trace: null, ...data }));
+    return this.repository.save(this.repository.create({ steps: [], parts: [], attachments: [], trace: null, ...data }));
   }
 
   listByConversation(conversationId: string, afterId = 0): Promise<Message[]> {

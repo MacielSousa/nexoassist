@@ -1,3 +1,4 @@
+import type { IFileResponseDTO } from "@modules/files/mapper/FileMap";
 import type { ITurnTrace, MessagePart, MessageRole } from "../dtos/supportTypes";
 import type { Message } from "../infra/typeorm/entities/Message";
 
@@ -9,6 +10,7 @@ export interface ICreateMessageDTO {
   authorName?: string | null;
   steps?: string[];
   parts?: MessagePart[];
+  attachments?: IFileResponseDTO[];
   trace?: ITurnTrace | null;
 }
 

@@ -39,13 +39,15 @@ export function buildHistory(messages: Message[], drafts: Draft[]): HistoryMessa
   const out: HistoryMessage[] = [];
   for (const m of messages.slice(-HISTORY_WINDOW)) {
     const role: HistoryMessage["role"] = m.role === "user" ? "user" : "assistant";
+    // O agent não vê o conteúdo dos anexos, só que eles existem (nome e tipo).
+    const files = m.attachments?.length ? `[anexos: ${m.attachments.map((a) => `${a.name} (${a.kind === "image" ? "imagem" : a.kind === "video" ? "vídeo" : "documento"})`).join(", ")}]` : "";
     const content =
       m.role === "user"
-        ? m.content
+        ? [m.content, files].filter(Boolean).join("\n")
         : m.role === "assistant"
           ? [m.content, ...m.parts.map(describe)].filter(Boolean).join("\n")
           : m.role === "analyst"
-            ? `[analista ${m.authorName ?? ""}] ${m.content}`
+            ? [`[analista ${m.authorName ?? ""}] ${m.content}`, files].filter(Boolean).join("\n")
             : `[sistema] ${m.content}`;
     if (!content) continue;
     // Mensagens seguidas do mesmo papel viram uma só (alguns provedores exigem alternância).

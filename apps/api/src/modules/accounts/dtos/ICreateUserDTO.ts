@@ -12,6 +12,8 @@ export interface ICreateUserDTO {
 
 export interface IUpdateUserDTO {
   name?: string;
+  email?: string;
+  avatarFileId?: string | null;
   role?: UserRole;
   department?: string;
   team?: SupportTeam | null;

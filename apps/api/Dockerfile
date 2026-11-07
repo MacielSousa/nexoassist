@@ -22,6 +22,9 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 RUN npm ci --omit=dev --workspace apps/api --include-workspace-root=false && npm cache clean --force
 COPY --from=build /app/apps/api/dist apps/api/dist
+# Pasta dos arquivos enviados (volume no compose); o usuário node precisa escrever nela.
+RUN mkdir -p /app/uploads && chown node:node /app/uploads
+ENV UPLOADS_DIR=/app/uploads
 WORKDIR /app/apps/api
 USER node
 EXPOSE 3333

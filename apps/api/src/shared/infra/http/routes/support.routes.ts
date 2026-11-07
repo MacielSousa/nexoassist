@@ -5,7 +5,10 @@ import { ConsoleController } from "@modules/support/useCases/consoleActions/Cons
 import { ConversationsController } from "@modules/support/useCases/getActiveConversation/ConversationsController";
 import { ConsoleItemSchema } from "@modules/support/useCases/listConsoleConversations/ListConsoleConversationsUseCase";
 import { SendMessageController } from "@modules/support/useCases/sendMessage/SendMessageController";
+import { FileResponseSchema } from "@modules/files/mapper/FileMap";
+import { FilesController } from "@modules/files/useCases/FilesController";
 import { defineRoute } from "../defineRoute";
+import { uploadSingleFile } from "../middlewares/uploadSingleFile";
 
 export const conversationsRoutes = Router();
 export const draftsRoutes = Router();
@@ -74,6 +77,20 @@ defineRoute(conversationsRoutes, "/conversations", {
   request: { params: ConversationsController.idParams, query: ConversationsController.eventsQuery },
   responses: { 200: sseResponse },
   handler: conversations.events,
+});
+
+defineRoute(conversationsRoutes, "/conversations", {
+  method: "post",
+  path: "/:id/attachments",
+  tag: "Atendimento",
+  summary: "Enviar anexo (imagem, vídeo ou documento) para a conversa",
+  description: "Devolve o id do arquivo; envie-o em attachmentIds ao mandar a mensagem. Imagem até 5 MB, vídeo até 25 MB, documento até 10 MB.",
+  auth: "any",
+  request: { params: FilesController.conversationParams, body: FilesController.uploadBody },
+  bodyContentType: "multipart/form-data",
+  middlewares: [uploadSingleFile],
+  responses: { 201: { description: "Arquivo salvo", schema: FileResponseSchema } },
+  handler: new FilesController().uploadAttachment,
 });
 
 defineRoute(draftsRoutes, "/drafts", {

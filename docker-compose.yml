@@ -44,6 +44,8 @@ services:
       CORS_ORIGIN: http://localhost:3000
       # Valor só para rodar localmente; em produção defina JWT_SECRET no ambiente.
       JWT_SECRET: ${JWT_SECRET:-local-dev-only-secret-change-me-0123456789}
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "3333:3333"
     depends_on:
@@ -74,3 +76,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

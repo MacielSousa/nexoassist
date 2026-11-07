@@ -25,6 +25,9 @@ import type { IMessagesRepository } from "@modules/support/repositories/IMessage
 import { ReportsRepository } from "@modules/reports/infra/typeorm/repositories/ReportsRepository";
 import type { IReportsRepository } from "@modules/reports/repositories/IReportsRepository";
 
+import { FilesRepository } from "@modules/files/infra/typeorm/repositories/FilesRepository";
+import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
+
 import "./providers";
 
 // Injeção de dependências: cada interface aponta para a implementação usada em produção.
@@ -60,3 +63,6 @@ container.registerSingleton<IAgentRunner>("AgentRunner", MastraAgentRunner);
 
 // reports
 container.registerSingleton<IReportsRepository>("ReportsRepository", ReportsRepository);
+
+// files
+container.registerSingleton<IFilesRepository>("FilesRepository", FilesRepository);

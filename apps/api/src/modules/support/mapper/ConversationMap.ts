@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { initialsOf } from "@modules/accounts/mapper/UserMap";
+import { avatarUrlOf, initialsOf } from "@modules/accounts/mapper/UserMap";
+import { FileResponseSchema } from "@modules/files/mapper/FileMap";
 import { addBusinessHours } from "@modules/tickets/domain/businessHours";
 import { CONVERSATION_STATUSES, HANDOFF_REASON_LABEL, HANDOFF_REASONS, MESSAGE_LIMIT, MESSAGE_ROLES } from "../dtos/supportTypes";
 import type { Conversation } from "../infra/typeorm/entities/Conversation";
@@ -11,7 +12,7 @@ import type { Message } from "../infra/typeorm/entities/Message";
 export const ConversationResponseSchema = z
   .object({
     id: z.uuid(),
-    employee: z.object({ id: z.uuid(), name: z.string(), email: z.string(), department: z.string(), initials: z.string() }),
+    employee: z.object({ id: z.uuid(), name: z.string(), email: z.string(), department: z.string(), initials: z.string(), avatarUrl: z.string().nullable() }),
     status: z.enum(CONVERSATION_STATUSES).meta({ description: "agent → waiting_human → human → closed" }),
     assignedAnalyst: z.object({ id: z.uuid(), name: z.string() }).nullable(),
     handoff: z
@@ -42,6 +43,7 @@ export const MessageResponseSchema = z
     content: z.string(),
     steps: z.array(z.string()).meta({ description: "Ações do agent nesta resposta" }),
     parts: z.array(z.any()).meta({ description: "Cards: options, ticket_selector, ticket, draft, articles" }),
+    attachments: z.array(FileResponseSchema),
     trace: z.any().nullable().meta({ description: "Como decidi: intenção, confiança, tools, tokens e latência" }),
     createdAt: z.iso.datetime(),
   })
@@ -68,7 +70,7 @@ export class ConversationMap {
   static toDTO(c: Conversation, userMessageCount: number): IConversationResponseDTO {
     return {
       id: c.id,
-      employee: { id: c.employee.id, name: c.employee.name, email: c.employee.email, department: c.employee.department, initials: initialsOf(c.employee.name) },
+      employee: { id: c.employee.id, name: c.employee.name, email: c.employee.email, department: c.employee.department, initials: initialsOf(c.employee.name), avatarUrl: avatarUrlOf(c.employee.avatarFileId) },
       status: c.status,
       assignedAnalyst: c.assignedAnalyst ? { id: c.assignedAnalyst.id, name: c.assignedAnalyst.name } : null,
       handoff:
@@ -100,6 +102,7 @@ export class ConversationMap {
       content: m.content,
       steps: m.steps,
       parts: m.parts,
+      attachments: m.attachments ?? [],
       trace: m.trace,
       createdAt: m.createdAt.toISOString(),
     };

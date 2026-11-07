@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import type { IFileResponseDTO } from "@modules/files/mapper/FileMap";
 import type { ITurnTrace, MessagePart, MessageRole } from "@modules/support/dtos/supportTypes";
 
 @Entity("messages")
@@ -29,6 +30,10 @@ export class Message {
   /** Cards mostrados junto (rascunho, chamado, opções...). */
   @Column({ type: "jsonb", default: () => "'[]'" })
   parts: MessagePart[];
+
+  /** Arquivos enviados junto (cópia dos metadados; o conteúdo fica em files). */
+  @Column({ type: "jsonb", default: () => "'[]'" })
+  attachments: IFileResponseDTO[];
 
   /** "Como decidi": intenção, confiança, tools, tokens e latência. */
   @Column({ type: "jsonb", nullable: true })

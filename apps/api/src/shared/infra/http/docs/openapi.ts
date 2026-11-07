@@ -43,6 +43,7 @@ export function openApiDocument() {
       { name: "Central de ajuda", description: "Artigos de autoatendimento" },
       { name: "Atendimento", description: "Chat do funcionário com o agent" },
       { name: "Console", description: "Console do analista: assumir, devolver e encerrar conversas" },
+      { name: "Arquivos", description: "Fotos de perfil e anexos do chat" },
       { name: "Relatórios", description: "Indicadores por período, analista, fila, categoria, prioridade e status" },
     ],
   });

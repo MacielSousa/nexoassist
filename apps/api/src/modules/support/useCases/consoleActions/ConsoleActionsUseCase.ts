@@ -1,6 +1,8 @@
 import { inject, injectable } from "tsyringe";
 import { isStaff, type IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
+import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
+import { resolveAttachments } from "@modules/files/utils/resolveAttachments";
 import type { IServiceDeskProvider } from "@modules/tickets/providers/ServiceDeskProvider/IServiceDeskProvider";
 import type { Conversation } from "@modules/support/infra/typeorm/entities/Conversation";
 import type { ISnapshotResponseDTO } from "@modules/support/mapper/ConversationMap";
@@ -24,6 +26,7 @@ export class ConsoleActionsUseCase {
     @inject("ServiceDeskProvider") private serviceDesk: IServiceDeskProvider,
     @inject(ConversationTimeline) private timeline: ConversationTimeline,
     @inject(ConversationSnapshot) private snapshot: ConversationSnapshot,
+    @inject("FilesRepository") private files: IFilesRepository,
   ) {}
 
   private async load(actor: IActor, id: string) {
@@ -56,10 +59,12 @@ export class ConsoleActionsUseCase {
     return this.snapshot.build(id);
   }
 
-  async reply(actor: IActor, id: string, text: string): Promise<ISnapshotResponseDTO> {
+  async reply(actor: IActor, id: string, text: string, attachmentIds: string[] = []): Promise<ISnapshotResponseDTO> {
     const { conversation, analyst } = await this.load(actor, id);
     this.ensureAssignedTo(conversation, analyst.id);
-    await this.timeline.post({ conversationId: id, role: "analyst", authorId: analyst.id, authorName: analyst.name, content: text.trim() });
+    if (!text.trim() && attachmentIds.length === 0) throw new AppError("Escreva uma mensagem ou envie um anexo.", 422);
+    const attachments = await resolveAttachments(this.files, analyst.id, id, attachmentIds);
+    await this.timeline.post({ conversationId: id, role: "analyst", authorId: analyst.id, authorName: analyst.name, content: text.trim(), attachments });
     return this.snapshot.build(id);
   }
 

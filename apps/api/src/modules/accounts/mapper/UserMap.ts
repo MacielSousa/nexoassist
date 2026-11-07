@@ -13,6 +13,7 @@ export const UserResponseSchema = z
     team: z.enum(SUPPORT_TEAMS).nullable(),
     active: z.boolean(),
     initials: z.string(),
+    avatarUrl: z.string().nullable().meta({ description: "Foto de perfil (GET autenticado); null se não houver" }),
     passwordChangedAt: z.iso.datetime(),
     createdAt: z.iso.datetime(),
   })
@@ -29,6 +30,8 @@ export const initialsOf = (name: string) =>
     .join("")
     .toUpperCase();
 
+export const avatarUrlOf = (fileId: string | null | undefined) => (fileId ? `/files/${fileId}` : null);
+
 export class UserMap {
   static toDTO(user: User): IUserResponseDTO {
     return {
@@ -40,6 +43,7 @@ export class UserMap {
       team: user.team,
       active: user.active,
       initials: initialsOf(user.name),
+      avatarUrl: avatarUrlOf(user.avatarFileId),
       passwordChangedAt: user.passwordChangedAt.toISOString(),
       createdAt: user.createdAt.toISOString(),
     };

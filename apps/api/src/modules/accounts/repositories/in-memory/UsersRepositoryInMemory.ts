@@ -12,6 +12,7 @@ export class UsersRepositoryInMemory implements IUsersRepository {
       id: randomUUID(),
       team: data.team ?? null,
       active: true,
+      avatarFileId: null,
       passwordChangedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -22,7 +23,9 @@ export class UsersRepositoryInMemory implements IUsersRepository {
 
   async update(id: string, data: IUpdateUserDTO): Promise<User> {
     const user = this.users.find((u) => u.id === id)!;
-    Object.assign(user, data, { updatedAt: new Date() });
+    // Como no repositório real: campos undefined não sobrescrevem nada.
+    const changes = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+    Object.assign(user, changes, { updatedAt: new Date() });
     if (data.password) user.passwordChangedAt = new Date();
     return user;
   }
