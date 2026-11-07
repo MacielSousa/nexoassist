@@ -12,6 +12,16 @@ import { LegacyServiceDeskProvider } from "@modules/tickets/providers/ServiceDes
 import type { IArticlesRepository } from "@modules/tickets/repositories/IArticlesRepository";
 import type { ITicketsRepository } from "@modules/tickets/repositories/ITicketsRepository";
 
+import { MastraAgentRunner, type IAgentRunner } from "@modules/support/agent/AgentRunner";
+import { ConversationsRepository } from "@modules/support/infra/typeorm/repositories/ConversationsRepository";
+import { DraftsRepository } from "@modules/support/infra/typeorm/repositories/DraftsRepository";
+import { MessagesRepository } from "@modules/support/infra/typeorm/repositories/MessagesRepository";
+import type { IConversationEventsProvider } from "@modules/support/providers/ConversationEventsProvider/IConversationEventsProvider";
+import { InMemoryConversationEvents } from "@modules/support/providers/ConversationEventsProvider/implementations/InMemoryConversationEvents";
+import type { IConversationsRepository } from "@modules/support/repositories/IConversationsRepository";
+import type { IDraftsRepository } from "@modules/support/repositories/IDraftsRepository";
+import type { IMessagesRepository } from "@modules/support/repositories/IMessagesRepository";
+
 import "./providers";
 
 // Injeção de dependências: cada interface aponta para a implementação usada em produção.
@@ -37,3 +47,10 @@ container.register<IServiceDeskProvider>("ServiceDeskProvider", {
       },
     ),
 });
+
+// support (atendimento)
+container.registerSingleton<IConversationsRepository>("ConversationsRepository", ConversationsRepository);
+container.registerSingleton<IMessagesRepository>("MessagesRepository", MessagesRepository);
+container.registerSingleton<IDraftsRepository>("DraftsRepository", DraftsRepository);
+container.registerSingleton<IConversationEventsProvider>("ConversationEventsProvider", InMemoryConversationEvents);
+container.registerSingleton<IAgentRunner>("AgentRunner", MastraAgentRunner);
