@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { ServiceDeskRepository } from "./repository";
 import type { ServiceDeskOptions } from "./http";
 
-export { handleServiceDesk } from "./http";
+export { handleServiceDesk, type ServiceDeskOptions } from "./http";
 export { ServiceDeskRepository } from "./repository";
 
 const g = globalThis as unknown as { __serviceDesk?: ServiceDeskOptions };
