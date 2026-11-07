@@ -2,7 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import type { TurnContext } from "./context";
 import { nexoTools } from "./tools";
 
-export const NEXO_MODEL = process.env.NEXO_MODEL ?? "anthropic/claude-haiku-5-5";
+export const NEXO_MODEL = process.env.NEXO_MODEL || "anthropic/claude-haiku-5-5";
 
 const RULES = `
 Você é o Nexo Assist, o agent do service desk de TI da Nexo. Atende funcionários num chat, em português do Brasil.

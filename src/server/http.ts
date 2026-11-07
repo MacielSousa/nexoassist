@@ -5,14 +5,31 @@ import { ConversationStore } from "./conversations";
 
 // Ligações do servidor para os route handlers.
 
+/** Variável de chave de cada provedor do roteador de modelos do Mastra. */
+const PROVIDER_KEYS: Record<string, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  google: "GOOGLE_GENERATIVE_AI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  groq: "GROQ_API_KEY",
+  mistral: "MISTRAL_API_KEY",
+  deepseek: "DEEPSEEK_API_KEY",
+  xai: "XAI_API_KEY",
+};
+
+function modelKeyPresent(): boolean {
+  const provider = (process.env.NEXO_MODEL || "anthropic/claude-haiku-5-5").split("/")[0]!;
+  const key = PROVIDER_KEYS[provider];
+  return key ? Boolean(process.env[key]) : true;
+}
+
 export function chatDeps(req: Request): ChatDeps {
   const baseUrl = process.env.SERVICE_DESK_URL ?? `${new URL(req.url).origin}/api/service-desk`;
   const token = process.env.SERVICE_DESK_TOKEN ?? "dev-service-token";
-  const model = process.env.NEXO_MODEL ?? "anthropic/claude-haiku-5-5";
   return {
     store: new ConversationStore(appDb()),
     clientFor: (actor) => new ServiceDeskClient({ baseUrl, token, actor }),
-    modelConfigured: !model.startsWith("anthropic/") || Boolean(process.env.ANTHROPIC_API_KEY),
+    modelConfigured: modelKeyPresent(),
   };
 }
 

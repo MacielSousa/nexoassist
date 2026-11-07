@@ -112,7 +112,7 @@ export async function sendEmployeeMessage(
     if (deps.modelConfigured === false) {
       store.addMessage(conv.id, {
         role: "assistant",
-        content: "O agent está sem chave do modelo configurada (ANTHROPIC_API_KEY no .env). Configure e tente de novo.",
+        content: "O agent está sem a chave do provedor do modelo configurada no .env (ex.: OPENAI_API_KEY ou ANTHROPIC_API_KEY). Configure e tente de novo.",
       });
       emit({ type: "done", snapshot: store.snapshot(conv.id) });
       return;
