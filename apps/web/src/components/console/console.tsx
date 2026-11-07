@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut, MessageCircle, Search } from "lucide-react";
+import { LogOut, MessageCircle, Search, Users } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { logout } from "@/app/login/actions";
 import { formatDate, formatTime, formatWhen } from "@/lib/format";
@@ -76,14 +77,25 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
         <span className="grid size-10 place-items-center pb-2">
           <NexoMark size={22} />
         </span>
-        <span className="relative grid size-10 place-items-center rounded-xl bg-paper" title="Conversas">
-          <MessageCircle size={19} />
-          {counts.waiting > 0 && (
-            <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-cta px-[5px] text-[10px] font-bold text-white ring-2 ring-desk">
-              {counts.waiting}
-            </span>
-          )}
+        <span aria-current="page" className="flex flex-col items-center gap-1 text-[10.5px] font-semibold text-ink">
+          <span className="relative grid size-10 place-items-center rounded-xl bg-paper">
+            <MessageCircle size={19} />
+            {counts.waiting > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-cta px-[5px] text-[10px] font-bold text-white ring-2 ring-desk">
+                {counts.waiting}
+              </span>
+            )}
+          </span>
+          Conversas
         </span>
+        {analyst.role === "admin" && (
+          <Link href="/admin/usuarios" className="group flex flex-col items-center gap-1 pt-1 text-[10.5px] font-medium text-ink-3 hover:text-ink">
+            <span className="grid size-10 place-items-center rounded-xl group-hover:bg-paper">
+              <Users size={19} />
+            </span>
+            Usuários
+          </Link>
+        )}
         <span className="flex-1" />
         <form action={logout}>
           <button title="Sair" className="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-paper">

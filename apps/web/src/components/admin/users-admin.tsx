@@ -106,7 +106,7 @@ export function UsersAdmin({ admin, initialUsers }: { admin: User; initialUsers:
             <Users size={16} /> Usuários
           </span>
           <Link href="/console" className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-desk">
-            <Headset size={16} className="text-ink-3" /> Console
+            <Headset size={16} className="text-ink-3" /> Conversas
           </Link>
         </nav>
         <div className="flex-1" />
