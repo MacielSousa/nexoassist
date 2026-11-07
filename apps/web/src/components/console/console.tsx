@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, MessageCircle, Search } from "lucide-react";
+import { MessageCircle, Power, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { logout } from "@/app/login/actions";
@@ -101,13 +101,19 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
           ))}
         <span className="flex-1" />
         <form action={logout}>
-          <button title="Sair" className="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-paper">
-            <LogOut size={16} />
+          <button title="Sair" aria-label="Sair" className="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-danger-soft hover:text-danger-text">
+            <Power size={16} />
           </button>
         </form>
-        <span title={`${analyst.name} · ${analyst.department}`}>
+        {/* A foto leva ao perfil, como em todas as telas. */}
+        <Link
+          href="/perfil"
+          title={`${analyst.name} · Meu perfil`}
+          aria-label="Meu perfil"
+          className="rounded-full transition hover:ring-2 hover:ring-primary-text/40 focus-visible:outline-2 focus-visible:outline-cta"
+        >
           <Avatar initials={analyst.initials} bg="var(--color-primary-soft)" fg="var(--color-primary-text)" src={analyst.avatarUrl} size={36} online ring="var(--color-desk)" />
-        </span>
+        </Link>
       </nav>
 
       <section className="flex w-[380px] shrink-0 flex-col border-r border-rule">
