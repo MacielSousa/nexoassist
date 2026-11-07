@@ -1,5 +1,7 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import type { SupportTeam, UserRole } from "@modules/accounts/dtos/UserRole";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import type { SupportTeam } from "@modules/accounts/dtos/UserRole";
+import { Role } from "./Role";
+import { UserPermission } from "./UserPermission";
 
 @Entity("users")
 export class User {
@@ -16,13 +18,22 @@ export class User {
   @Column({ type: "varchar" })
   password: string;
 
-  @Column({ type: "varchar" })
-  role: UserRole;
+  @Column({ name: "role_id", type: "uuid" })
+  roleId: string;
+
+  /** Role com as permissões (os repositórios sempre carregam). */
+  @ManyToOne(() => Role)
+  @JoinColumn({ name: "role_id" })
+  role: Role;
+
+  /** Permissões concedidas direto ao usuário, além das da role. */
+  @OneToMany(() => UserPermission, (p) => p.user)
+  extraPermissions: UserPermission[];
 
   @Column({ type: "varchar" })
   department: string;
 
-  /** Fila do analista (Suporte N1/N2). Nulo para funcionários e admins. */
+  /** Fila de atendimento (Suporte N1/N2) para quem atende no console. */
   @Column({ type: "varchar", nullable: true })
   team: SupportTeam | null;
 

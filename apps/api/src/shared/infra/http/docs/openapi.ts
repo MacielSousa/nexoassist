@@ -31,14 +31,15 @@ export function openApiDocument() {
       description: [
         "API do service desk de TI da Nexo: contas, chamados, central de ajuda e atendimento com o agent.",
         "",
-        "Para testar: faça login em **POST /sessions** (ex.: `admin@nexo.com.br`, senha do seed), copie o `token` e clique em **Authorize**.",
+        "Para testar: faça login em **POST /sessions** (ex.: `admin@nexo.com.br`, senha do seed `nexo1234`), copie o `token` e clique em **Authorize**.",
       ].join("\n"),
     },
     servers: [{ url: "/" }],
     tags: [
       { name: "Sessões", description: "Login, renovação de token e logout" },
       { name: "Perfil", description: "Dados do usuário autenticado" },
-      { name: "Usuários", description: "Cadastro de funcionários, analistas e admins (só admin)" },
+      { name: "Usuários", description: "Cadastro de usuários e permissões concedidas" },
+      { name: "Roles e permissões", description: "Roles (conjuntos de permissões) e o catálogo de permissões" },
       { name: "Chamados", description: "Chamados do service desk" },
       { name: "Central de ajuda", description: "Artigos de autoatendimento" },
       { name: "Atendimento", description: "Chat do funcionário com o agent" },

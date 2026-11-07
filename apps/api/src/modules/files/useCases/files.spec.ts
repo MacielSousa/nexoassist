@@ -35,13 +35,9 @@ beforeEach(async () => {
   store = new StoreUploadUseCase(files, storage);
   conversations = new ConversationsRepositoryInMemory((id) => users.users.find((u) => u.id === id));
   snapshot = new ConversationSnapshot(conversations, new MessagesRepositoryInMemory(), new DraftsRepositoryInMemory());
-  const mk = async (name: string, role: IActor["role"]) => {
-    const u = await users.create({ name, email: `${name.toLowerCase()}@nexo.com.br`, password: "hashed:senha-atual", role, department: "TI" });
-    return { id: u.id, role };
-  };
-  ana = await mk("Ana", "employee");
-  carla = await mk("Carla", "employee");
-  admin = await mk("Admin", "admin");
+  ana = await users.createActor("Ana", "employee");
+  carla = await users.createActor("Carla", "employee");
+  admin = await users.createActor("Admin", "admin");
 });
 
 describe("Tipo de arquivo", () => {

@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import type { IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import { UserMap, type IUserResponseDTO } from "@modules/accounts/mapper/UserMap";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
@@ -7,7 +7,7 @@ import { StoreUploadUseCase } from "@modules/files/useCases/uploadFile/StoreUplo
 import type { IStorageProvider } from "@shared/container/providers/StorageProvider/IStorageProvider";
 import { AppError } from "@shared/errors/AppError";
 
-/** Foto de perfil: o próprio usuário ou um admin pode trocar/remover. Só imagem, até 5 MB. */
+/** Foto de perfil: o próprio usuário ou quem tem users.manage pode trocar/remover. Só imagem, até 5 MB. */
 @injectable()
 export class UpdateAvatarUseCase {
   constructor(
@@ -18,7 +18,7 @@ export class UpdateAvatarUseCase {
   ) {}
 
   private async target(actor: IActor, userId: string) {
-    if (actor.id !== userId && actor.role !== "admin") throw new AppError("Você só pode alterar a sua própria foto.", 403);
+    if (actor.id !== userId && !can(actor, "users.manage")) throw new AppError("Você só pode alterar a sua própria foto.", 403);
     const user = await this.users.findById(userId);
     if (!user) throw new AppError("Usuário não encontrado.", 404);
     return user;

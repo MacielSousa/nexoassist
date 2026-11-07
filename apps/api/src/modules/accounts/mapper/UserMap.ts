@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { SUPPORT_TEAMS, USER_ROLES } from "../dtos/UserRole";
+import { effectivePermissions } from "../dtos/IActor";
+import { PERMISSION_KEYS } from "../dtos/permissions";
+import { SUPPORT_TEAMS } from "../dtos/UserRole";
 import type { User } from "../infra/typeorm/entities/User";
 
 /** Formato público do usuário: o que a API devolve (sem senha). */
@@ -8,7 +10,11 @@ export const UserResponseSchema = z
     id: z.uuid(),
     name: z.string(),
     email: z.email(),
-    role: z.enum(USER_ROLES),
+    role: z.object({ id: z.uuid(), key: z.string(), name: z.string() }),
+    /** Permissões efetivas (role + extras): o front usa para montar menus. */
+    permissions: z.array(z.enum(PERMISSION_KEYS)),
+    /** Permissões concedidas direto ao usuário, além das da role. */
+    extraPermissions: z.array(z.enum(PERMISSION_KEYS)),
     department: z.string(),
     team: z.enum(SUPPORT_TEAMS).nullable(),
     active: z.boolean(),
@@ -38,7 +44,9 @@ export class UserMap {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: { id: user.role.id, key: user.role.key, name: user.role.name },
+      permissions: effectivePermissions(user),
+      extraPermissions: (user.extraPermissions ?? []).map((p) => p.permissionKey) as IUserResponseDTO["extraPermissions"],
       department: user.department,
       team: user.team,
       active: user.active,

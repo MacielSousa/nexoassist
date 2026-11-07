@@ -109,7 +109,11 @@ export class ReportsRepository implements IReportsRepository {
 
   async analysts(f: IReportFilters): Promise<IAnalystRow[]> {
     const params: unknown[] = [f.from, f.to];
-    const where = ["u.role = 'analyst'"];
+    // Analistas = quem pode atender no console (pela role ou permissão concedida direto).
+    const where = [
+      `(EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id = u.role_id AND rp.permission_key = 'console.attend')
+        OR EXISTS (SELECT 1 FROM user_permissions up WHERE up.user_id = u.id AND up.permission_key = 'console.attend'))`,
+    ];
     if (f.analystId) {
       params.push(f.analystId);
       where.push(`u.id = $${params.length}`);

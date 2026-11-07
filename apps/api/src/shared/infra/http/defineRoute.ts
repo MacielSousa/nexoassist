@@ -1,9 +1,9 @@
 import type { NextFunction, Request, RequestHandler, Response, Router } from "express";
 import type { ZodObject, ZodType } from "zod";
-import type { UserRole } from "@modules/accounts/dtos/UserRole";
+import type { Permission } from "@modules/accounts/dtos/permissions";
 import { ErrorSchema, registry } from "./docs/openapi";
 import { ensureAuthenticated } from "./middlewares/ensureAuthenticated";
-import { ensureRole } from "./middlewares/ensureRole";
+import { ensurePermission } from "./middlewares/ensurePermission";
 
 type Method = "get" | "post" | "put" | "patch" | "delete";
 
@@ -14,8 +14,8 @@ export interface RouteSpec {
   tag: string;
   summary: string;
   description?: string;
-  /** false = rota pública; "any" = qualquer usuário autenticado; lista = só esses perfis. */
-  auth: false | "any" | UserRole[];
+  /** false = rota pública; "any" = qualquer usuário autenticado; lista = quem tiver pelo menos uma dessas permissões. */
+  auth: false | "any" | Permission[];
   request?: { body?: ZodType; query?: ZodObject; params?: ZodObject };
   /** Content-Type do corpo (padrão application/json; uploads usam multipart/form-data). */
   bodyContentType?: string;
@@ -45,7 +45,7 @@ export function defineRoute(router: Router, prefix: string, spec: RouteSpec) {
     path: toOpenApiPath(fullPath),
     tags: [spec.tag],
     summary: spec.summary,
-    description: spec.description,
+    description: Array.isArray(spec.auth) ? [spec.description, `**Permissão:** ${spec.auth.join(" ou ")}`].filter(Boolean).join("\n\n") : spec.description,
     security: spec.auth ? [{ bearerAuth: [] }] : undefined,
     request: {
       params: spec.request?.params,
@@ -62,6 +62,6 @@ export function defineRoute(router: Router, prefix: string, spec: RouteSpec) {
 
   const guards = [];
   if (spec.auth) guards.push(ensureAuthenticated);
-  if (Array.isArray(spec.auth)) guards.push(ensureRole(...spec.auth));
+  if (Array.isArray(spec.auth)) guards.push(ensurePermission(...spec.auth));
   router[spec.method](spec.path, ...guards, ...(spec.middlewares ?? []), spec.handler);
 }

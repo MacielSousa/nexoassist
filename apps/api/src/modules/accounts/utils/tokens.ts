@@ -11,7 +11,8 @@ export interface ISessionTokens {
 
 /** Emite um token de acesso (JWT curto) e um refresh token opaco salvo no banco. */
 export async function issueSessionTokens(user: User, tokens: IUsersTokensRepository): Promise<ISessionTokens> {
-  const token = sign({ role: user.role }, authConfig.secret, {
+  // O token só identifica o usuário; as permissões são lidas do banco a cada requisição.
+  const token = sign({}, authConfig.secret, {
     subject: user.id,
     expiresIn: authConfig.expiresIn as SignOptions["expiresIn"],
   });

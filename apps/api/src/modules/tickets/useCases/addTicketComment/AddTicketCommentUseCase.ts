@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import { isStaff, type IActor } from "@modules/accounts/dtos/IActor";
+import type { IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import { canReopen, isOpen } from "@modules/tickets/domain/ticketRules";
 import { TicketMap, type ITicketResponseDTO } from "@modules/tickets/mapper/TicketMap";
@@ -33,7 +33,7 @@ export class AddTicketCommentUseCase {
       ticket.resolvedById = null;
     } else if (!isOpen(ticket.status)) {
       throw new AppError("Esse chamado está encerrado. Abra um novo ou reabra se foi resolvido há até 7 dias.", 409);
-    } else if (ticket.status === "aguardando_funcionario" && !isStaff(actor)) {
+    } else if (ticket.status === "aguardando_funcionario" && ticket.requesterId === actor.id) {
       ticket.status = "aberto"; // o funcionário respondeu: volta para a fila
     }
 

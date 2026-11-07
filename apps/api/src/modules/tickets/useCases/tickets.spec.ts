@@ -31,13 +31,9 @@ const vpn = {
 beforeEach(async () => {
   tickets = new TicketsRepositoryInMemory();
   users = new UsersRepositoryInMemory();
-  const mk = async (name: string, role: IActor["role"]) => {
-    const u = await users.create({ name, email: `${name.toLowerCase()}@nexo.com.br`, password: "x", role, department: "TI", team: role === "analyst" ? "Suporte N2" : null });
-    return { id: u.id, role };
-  };
-  ana = await mk("Ana", "employee");
-  carla = await mk("Carla", "employee");
-  rafael = await mk("Rafael", "analyst");
+  ana = await users.createActor("Ana", "employee");
+  carla = await users.createActor("Carla", "employee");
+  rafael = await users.createActor("Rafael", "analyst");
 });
 
 describe("Chamados", () => {

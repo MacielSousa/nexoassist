@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import type { IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
 import { resolveAttachments } from "@modules/files/utils/resolveAttachments";
@@ -55,7 +55,7 @@ export class SendMessageUseCase {
   ) {}
 
   async execute({ actor, text, attachmentIds = [], emit, signal }: IRequest): Promise<void> {
-    if (actor.role !== "employee") throw new AppError("O chat é para funcionários.", 403);
+    if (!can(actor, "chat.use")) throw new AppError("Você não tem permissão para usar o chat.", 403);
     const content = text.trim();
     if ((!content && attachmentIds.length === 0) || content.length > 2000) {
       throw new AppError("Escreva uma mensagem (até 2000 caracteres) ou envie um anexo.", 422);

@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import { isStaff, type IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import type { IFilesRepository } from "@modules/files/repositories/IFilesRepository";
 import { resolveAttachments } from "@modules/files/utils/resolveAttachments";
@@ -30,7 +30,7 @@ export class ConsoleActionsUseCase {
   ) {}
 
   private async load(actor: IActor, id: string) {
-    if (!isStaff(actor)) throw new AppError("Só analistas atendem conversas.", 403);
+    if (!can(actor, "console.attend")) throw new AppError("Você não tem permissão para atender conversas.", 403);
     const conversation = await this.conversations.findById(id);
     if (!conversation) throw new AppError("Conversa não encontrada.", 404);
     if (conversation.status === "closed") throw new AppError("Conversa encerrada.", 409);

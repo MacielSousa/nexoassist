@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import type { IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import type { ISnapshotResponseDTO } from "@modules/support/mapper/ConversationMap";
 import type { IConversationsRepository } from "@modules/support/repositories/IConversationsRepository";
 import { ConversationSnapshot } from "@modules/support/services/ConversationSnapshot";
@@ -14,7 +14,7 @@ export class StartNewConversationUseCase {
   ) {}
 
   async execute(actor: IActor): Promise<ISnapshotResponseDTO> {
-    if (actor.role !== "employee") throw new AppError("O chat é para funcionários.", 403);
+    if (!can(actor, "chat.use")) throw new AppError("Você não tem permissão para usar o chat.", 403);
     const current = await this.conversations.findActiveByEmployee(actor.id);
     if (current && current.status !== "agent") throw new AppError("Um analista está cuidando da sua conversa atual.", 409);
     if (current) {

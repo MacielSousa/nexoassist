@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import { isStaff, type IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import { STATUS_LABEL, type TicketStatus } from "@modules/tickets/domain/ticketRules";
 import { TicketMap, type ITicketResponseDTO } from "@modules/tickets/mapper/TicketMap";
@@ -16,7 +16,7 @@ export class UpdateTicketStatusUseCase {
   ) {}
 
   async execute({ actor, number, status }: { actor: IActor; number: string; status: TicketStatus }): Promise<ITicketResponseDTO> {
-    if (!isStaff(actor)) throw new AppError("Só analistas alteram o status de um chamado.", 403);
+    if (!can(actor, "tickets.manage")) throw new AppError("Só analistas alteram o status de um chamado.", 403);
     const ticket = await findVisibleTicket(this.ticketsRepository, actor, number);
     if (ticket.status === status) return TicketMap.toDTO(ticket);
 

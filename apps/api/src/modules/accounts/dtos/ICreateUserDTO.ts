@@ -1,11 +1,11 @@
-import type { SupportTeam, UserRole } from "./UserRole";
+import type { SupportTeam } from "./UserRole";
 
 export interface ICreateUserDTO {
   name: string;
   email: string;
   /** Senha já criptografada (o use case cuida do hash). */
   password: string;
-  role: UserRole;
+  roleId: string;
   department: string;
   team?: SupportTeam | null;
 }
@@ -14,7 +14,7 @@ export interface IUpdateUserDTO {
   name?: string;
   email?: string;
   avatarFileId?: string | null;
-  role?: UserRole;
+  roleId?: string;
   department?: string;
   team?: SupportTeam | null;
   active?: boolean;

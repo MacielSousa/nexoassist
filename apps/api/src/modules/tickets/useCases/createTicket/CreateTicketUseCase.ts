@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import type { IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import { classifyPriority, type Affected, type Category, type Severity, type TicketType } from "@modules/tickets/domain/ticketRules";
 import { TicketMap, type ITicketResponseDTO } from "@modules/tickets/mapper/TicketMap";
 import type { ITicketsRepository } from "@modules/tickets/repositories/ITicketsRepository";
@@ -24,7 +24,7 @@ export class CreateTicketUseCase {
   constructor(@inject("TicketsRepository") private ticketsRepository: ITicketsRepository) {}
 
   async execute({ actor, data, idempotencyKey }: { actor: IActor; data: ICreateTicketRequest; idempotencyKey?: string }): Promise<ITicketResponseDTO> {
-    if (actor.role !== "employee") throw new AppError("Chamados são abertos por funcionários.", 403);
+    if (!can(actor, "tickets.create")) throw new AppError("Você não tem permissão para abrir chamados.", 403);
 
     // Mesma chave = mesmo pedido: devolve o chamado já criado em vez de duplicar.
     if (idempotencyKey) {

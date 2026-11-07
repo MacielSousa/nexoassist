@@ -1,10 +1,11 @@
-import type { SupportTeam, UserRole } from "@modules/accounts/dtos/UserRole";
+import type { SupportTeam } from "@modules/accounts/dtos/UserRole";
 import type { Affected, Category, Priority, TicketStatus, TicketType } from "@modules/tickets/domain/ticketRules";
 
 // Dados de exemplo (Anexo B do PRD). Datas relativas ao momento do seed para que
 // os cenários ("parado há 6 dias", "resolvido há 4 dias") continuem fazendo sentido.
 
-export const SEED_USERS: { name: string; email: string; role: UserRole; department: string; team?: SupportTeam }[] = [
+/** `role` é a chave de uma role de sistema (criadas pela migration de roles). */
+export const SEED_USERS: { name: string; email: string; role: "admin" | "analyst" | "employee"; department: string; team?: SupportTeam }[] = [
   { name: "Admin Nexo", email: "admin@nexo.com.br", role: "admin", department: "TI" },
   { name: "Rafael Lima", email: "rafael.lima@nexo.com.br", role: "analyst", department: "TI", team: "Suporte N2" },
   { name: "Júlia Costa", email: "julia.costa@nexo.com.br", role: "analyst", department: "TI", team: "Suporte N1" },

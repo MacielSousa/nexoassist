@@ -1,10 +1,10 @@
-import type { UserRole } from "@modules/accounts/dtos/UserRole";
+import type { IActor } from "@modules/accounts/dtos/IActor";
 
 declare global {
   namespace Express {
     interface Request {
-      /** Preenchido pelo middleware ensureAuthenticated. */
-      user: { id: string; role: UserRole };
+      /** Preenchido pelo middleware ensureAuthenticated (id + permissões efetivas). */
+      user: IActor;
     }
   }
 }

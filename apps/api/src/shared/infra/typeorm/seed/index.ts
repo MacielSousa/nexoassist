@@ -25,8 +25,8 @@ async function seed() {
     const ids = new Map<string, string>();
     for (const u of SEED_USERS) {
       const [row] = (await tx.query(
-        `INSERT INTO users (name, email, password, role, department, team, password_changed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        `INSERT INTO users (name, email, password, role_id, department, team, password_changed_at)
+         VALUES ($1, $2, $3, (SELECT id FROM roles WHERE key = $4), $5, $6, $7) RETURNING id`,
         [u.name, u.email, password, u.role, u.department, u.team ?? null, ago(42)],
       )) as { id: string }[];
       ids.set(u.email, row!.id);

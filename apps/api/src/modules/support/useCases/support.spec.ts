@@ -65,10 +65,8 @@ beforeEach(async () => {
   timeline = new ConversationTimeline(messages, conversations, new InMemoryConversationEvents());
   snapshot = new ConversationSnapshot(conversations, messages, drafts);
   files = new FilesRepositoryInMemory();
-  const a = await users.create({ name: "Ana Souza", email: "ana@nexo.com.br", password: "x", role: "employee", department: "Financeiro" });
-  const r = await users.create({ name: "Rafael Lima", email: "rafael@nexo.com.br", password: "x", role: "analyst", department: "TI", team: "Suporte N2" });
-  ana = { id: a.id, role: "employee" };
-  rafael = { id: r.id, role: "analyst" };
+  ana = await users.createActor("Ana Souza", "employee", { department: "Financeiro" });
+  rafael = await users.createActor("Rafael Lima", "analyst");
 });
 
 describe("Atendimento com o agent", () => {
@@ -97,9 +95,9 @@ describe("Atendimento com o agent", () => {
       await tool(prepareTicketDraft, vpnDraft, ctx);
       return { text: "ok", trace };
     }).execute({ actor: ana, text: "VPN", emit: () => undefined });
-    const carla = await users.create({ name: "Carla", email: "carla@nexo.com.br", password: "x", role: "employee", department: "Compras" });
+    const carla = await users.createActor("Carla", "employee");
     const confirm = new ConfirmDraftUseCase(drafts, conversations, serviceDesk, timeline, snapshot);
-    await expect(confirm.execute({ actor: { id: carla.id, role: "employee" }, draftId: drafts.drafts[0]!.id })).rejects.toMatchObject({ statusCode: 404 });
+    await expect(confirm.execute({ actor: carla, draftId: drafts.drafts[0]!.id })).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it("transfere sozinho quando o agent registra baixa confiança", async () => {

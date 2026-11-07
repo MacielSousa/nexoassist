@@ -1,7 +1,9 @@
 import { container } from "tsyringe";
 
 import { env } from "@config/env";
+import { RolesRepository } from "@modules/accounts/infra/typeorm/repositories/RolesRepository";
 import { UsersRepository } from "@modules/accounts/infra/typeorm/repositories/UsersRepository";
+import type { IRolesRepository } from "@modules/accounts/repositories/IRolesRepository";
 import { UsersTokensRepository } from "@modules/accounts/infra/typeorm/repositories/UsersTokensRepository";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import type { IUsersTokensRepository } from "@modules/accounts/repositories/IUsersTokensRepository";
@@ -36,6 +38,7 @@ import "./providers";
 // accounts
 container.registerSingleton<IUsersRepository>("UsersRepository", UsersRepository);
 container.registerSingleton<IUsersTokensRepository>("UsersTokensRepository", UsersTokensRepository);
+container.registerSingleton<IRolesRepository>("RolesRepository", RolesRepository);
 
 // tickets
 container.registerSingleton<ITicketsRepository>("TicketsRepository", TicketsRepository);

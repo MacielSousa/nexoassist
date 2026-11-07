@@ -1,5 +1,5 @@
 import { inject, injectable } from "tsyringe";
-import { isStaff, type IActor } from "@modules/accounts/dtos/IActor";
+import { can, type IActor } from "@modules/accounts/dtos/IActor";
 import { ConversationMap, type ISnapshotResponseDTO } from "../mapper/ConversationMap";
 import type { IConversationsRepository } from "../repositories/IConversationsRepository";
 import type { IDraftsRepository } from "../repositories/IDraftsRepository";
@@ -16,10 +16,10 @@ export class ConversationSnapshot {
     @inject("DraftsRepository") private drafts: IDraftsRepository,
   ) {}
 
-  /** Funcionário só vê a própria conversa; analistas e admins veem todas. */
+  /** Cada um vê a própria conversa; com console.view, todas. */
   async findVisible(actor: IActor, conversationId: string): Promise<Conversation> {
     const conversation = await this.conversations.findById(conversationId);
-    if (!conversation || (!isStaff(actor) && conversation.employeeId !== actor.id)) {
+    if (!conversation || (!can(actor, "console.view") && conversation.employeeId !== actor.id)) {
       throw new AppError("Conversa não encontrada.", 404);
     }
     return conversation;

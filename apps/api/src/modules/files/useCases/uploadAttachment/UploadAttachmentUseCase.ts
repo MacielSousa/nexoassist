@@ -19,7 +19,7 @@ export class UploadAttachmentUseCase {
   async execute({ actor, conversationId, originalName, content }: { actor: IActor; conversationId: string; originalName: string; content: Buffer }): Promise<IFileResponseDTO> {
     const conversation = await this.snapshot.findVisible(actor, conversationId);
     if (conversation.status === "closed") throw new AppError("Conversa encerrada.", 409);
-    if (actor.role !== "employee" && conversation.assignedAnalystId !== actor.id) {
+    if (conversation.employeeId !== actor.id && conversation.assignedAnalystId !== actor.id) {
       throw new AppError("Assuma o atendimento para enviar anexos.", 409);
     }
     const file = await this.store.execute({
