@@ -1,3 +1,9 @@
+# Sobe tudo com um comando:  docker compose up -d --build
+#   web  → http://localhost:3000
+#   api  → http://localhost:3333 (Swagger em /api-docs)
+#   postgres → localhost:5432 (nexo/nexo)
+# A chave do modelo (ex.: ANTHROPIC_API_KEY ou OPENAI_API_KEY) vem de apps/api/.env.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -36,11 +42,18 @@ services:
       DB_PASSWORD: nexo
       DB_NAME: nexo
       CORS_ORIGIN: http://localhost:3000
+      # Valor só para rodar localmente; em produção defina JWT_SECRET no ambiente.
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-secret-change-me-0123456789}
     ports:
       - "3333:3333"
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3333/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   web:
     build:
@@ -49,12 +62,15 @@ services:
     container_name: nexo_web
     restart: unless-stopped
     environment:
-      # A web fala com a API pela rede interna do compose.
+      # O web fala com a API pela rede interna do compose.
       API_URL: http://api:3333
+      # Acesso por http://localhost: cookies sem a flag Secure.
+      INSECURE_COOKIES: "true"
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:
