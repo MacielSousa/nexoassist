@@ -8,6 +8,7 @@ const DEMO = [
   { email: "ana.souza@nexo.com.br", label: "Ana Souza · funcionária" },
   { email: "carla.mendes@nexo.com.br", label: "Carla Mendes · funcionária" },
   { email: "rafael.lima@nexo.com.br", label: "Rafael Lima · analista N2" },
+  { email: "admin@nexo.com.br", label: "Admin" },
 ];
 
 export function LoginForm() {
@@ -92,7 +93,7 @@ export function LoginForm() {
       </button>
 
       <div className="flex flex-col gap-2 border-t border-rule pt-4 text-[12.5px] text-ink-3">
-        <span>Contas de demonstração (qualquer senha):</span>
+        <span>Contas de demonstração (senha do seed: nexo1234):</span>
         <div className="flex flex-wrap gap-1.5">
           {DEMO.map((d) => (
             <button

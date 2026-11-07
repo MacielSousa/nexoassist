@@ -1,7 +1,7 @@
 import { ChevronRight, LogOut, MessageSquare, UserRound } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
-import type { User } from "@/server/auth";
+import type { User } from "@/lib/types";
 import { NexoMark } from "./nexo-mark";
 import { cx } from "./ui";
 
@@ -52,7 +52,7 @@ export function EmployeeShell({
           </span>
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
-            <span className="truncate text-[11.5px] text-ink-3">{user.id}</span>
+            <span className="truncate text-[11.5px] text-ink-3">{user.email}</span>
           </span>
         </div>
         <form action={logout}>

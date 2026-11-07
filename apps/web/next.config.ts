@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Mastra roda só no servidor e não deve ser empacotado pelo bundler.
-  serverExternalPackages: ["@mastra/core"],
+  // Build enxuto para a imagem Docker (node server.js).
+  output: "standalone",
   poweredByHeader: false,
   devIndicators: false,
 };

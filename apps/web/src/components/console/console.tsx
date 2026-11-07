@@ -3,11 +3,11 @@
 import { LogOut, MessageCircle, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { logout } from "@/app/login/actions";
-import { formatDate, formatTime, formatWhen } from "@/domain";
-import type { User } from "@/server/auth";
-import type { ConsoleItem, ConversationDTO } from "@/server/types";
+import { formatDate, formatTime, formatWhen } from "@/lib/format";
+import type { ConsoleItem, Conversation as ConversationDTO, User } from "@/lib/types";
+
 import { NexoMark } from "../nexo-mark";
-import { Avatar, cx, Dot, Pill } from "../ui";
+import { Avatar, avatarColors, cx, Dot, Pill } from "../ui";
 import { ConversationPanel } from "./conversation-panel";
 
 type Filter = "all" | "waiting" | "agent" | "mine";
@@ -18,7 +18,7 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
   const [items, setItems] = useState(initialItems);
   const [filter, setFilter] = useState<Filter>("waiting");
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<number | null>(
+  const [selected, setSelected] = useState<string | null>(
     initialItems.find((i) => i.conversation.status === "waiting_human")?.conversation.id ?? initialItems[0]?.conversation.id ?? null,
   );
   const [listError, setListError] = useState(false);
@@ -29,7 +29,7 @@ export function Console({ analyst, initialItems }: { analyst: User; initialItems
     try {
       const res = await fetch("/api/console/conversations", { cache: "no-store" });
       if (!res.ok) throw new Error();
-      setItems(((await res.json()) as { items: ConsoleItem[] }).items);
+      setItems((await res.json()) as ConsoleItem[]);
       setNow(Date.now());
       setListError(false);
     } catch {
@@ -213,7 +213,7 @@ function ListItem({
   return (
     <li>
       <button onClick={onClick} className={cx("flex w-full gap-3 rounded-xl p-2.5 text-left", active ? "bg-desk" : "hover:bg-desk/60")}>
-        <Avatar initials={c.employee.initials} bg={c.employee.avatarBg} fg={c.employee.avatarFg} size={46} online={online} ring={active ? "var(--color-desk)" : "var(--color-paper)"} />
+        <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} size={46} online={online} ring={active ? "var(--color-desk)" : "var(--color-paper)"} />
         <span className={cx("flex min-w-0 flex-1 flex-col gap-[3px] pb-2.5", !active && "border-b border-rule")}>
           <span className="flex items-center gap-2">
             <span className={cx("flex-1 truncate text-[15.5px]", item.unread ? "font-semibold" : "font-medium")}>{c.employee.name}</span>

@@ -1,13 +1,11 @@
 import { ChatView } from "@/components/chat/chat-view";
-import { requireUser } from "@/server/auth";
-import { appDb } from "@/server/db";
-import { ConversationStore } from "@/server/conversations";
+import { apiFetch, requireUser } from "@/lib/api";
+import type { ConversationSnapshot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ChatPage() {
   const user = await requireUser("employee");
-  const store = new ConversationStore(appDb());
-  const snapshot = store.snapshot(store.activeOrCreate(user.id).id);
+  const snapshot = await apiFetch<ConversationSnapshot>("/conversations/active");
   return <ChatView user={user} initial={snapshot} />;
 }

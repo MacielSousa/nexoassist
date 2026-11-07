@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { currentUser } from "@/server/auth";
+import { currentUser, homeFor } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const user = await currentUser();
-  redirect(!user ? "/login" : user.role === "analyst" ? "/console" : "/chat");
+  redirect(user ? homeFor(user.role) : "/login");
 }

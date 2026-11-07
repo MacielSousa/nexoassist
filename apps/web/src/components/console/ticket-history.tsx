@@ -2,16 +2,24 @@
 
 import { ArrowRightLeft, ChevronDown, ChevronRight, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { TicketView } from "@/agent/types";
-import { formatDate, formatRelative, formatTime, isOpen } from "@/domain";
-import type { PublicUser } from "@/server/types";
+import { formatDate, formatRelative, formatTime } from "@/lib/format";
+import type { Conversation, Ticket } from "@/lib/types";
 import { cx, Dot, STATUS_DOT } from "../ui";
 
-type HistoryTicket = TicketView & { resolvedAt: string | null; lastComment: { at: string; author: string; text: string } | null };
+const isOpen = (t: Ticket) => t.status !== "resolvido" && t.status !== "fechado";
 
-/** Painel lateral com os chamados do funcionário (direto do serviço de chamados). */
-export function TicketHistory({ employee, focusTicket, refreshKey }: { employee: PublicUser; focusTicket: string | null; refreshKey: string }) {
-  const [tickets, setTickets] = useState<HistoryTicket[] | null>(null);
+/** Painel lateral com os chamados do funcionário. O chamado da conversa vem com o histórico. */
+export function TicketHistory({
+  employee,
+  focusTicket,
+  refreshKey,
+}: {
+  employee: Conversation["employee"];
+  focusTicket: string | null;
+  refreshKey: string;
+}) {
+  const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const [current, setCurrent] = useState<Ticket | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const first = employee.name.split(" ")[0];
@@ -21,16 +29,21 @@ export function TicketHistory({ employee, focusTicket, refreshKey }: { employee:
     let retry: ReturnType<typeof setTimeout>;
     const load = async () => {
       try {
-        const res = await fetch(`/api/console/employees/${encodeURIComponent(employee.id)}/tickets`, { cache: "no-store" });
-        const data = (await res.json()) as { tickets?: HistoryTicket[]; error?: string };
+        const [listRes, detailRes] = await Promise.all([
+          fetch(`/api/tickets?scope=all&requesterId=${employee.id}`, { cache: "no-store" }),
+          focusTicket ? fetch(`/api/tickets/${focusTicket}`, { cache: "no-store" }) : null,
+        ]);
+        if (!listRes.ok) throw new Error(((await listRes.json()) as { message?: string }).message);
+        const list = (await listRes.json()) as Ticket[];
+        const detail = detailRes?.ok ? ((await detailRes.json()) as Ticket) : null;
         if (cancelled) return;
-        if (!res.ok) throw new Error(data.error);
-        setTickets(data.tickets ?? []);
+        setTickets(list);
+        setCurrent(detail);
         setError(null);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error && err.message ? err.message : "Sistema de chamados indisponível.");
-        retry = setTimeout(load, 3000); // o legado costuma voltar em segundos
+        setError(err instanceof Error && err.message ? err.message : "Não foi possível carregar os chamados.");
+        retry = setTimeout(load, 3000);
       }
     };
     void load();
@@ -38,20 +51,18 @@ export function TicketHistory({ employee, focusTicket, refreshKey }: { employee:
       cancelled = true;
       clearTimeout(retry);
     };
-  }, [employee.id, refreshKey]);
+  }, [employee.id, focusTicket, refreshKey]);
 
-  const current = tickets?.find((t) => t.number === focusTicket) ?? null;
-  const others = (tickets ?? []).filter((t) => t !== current);
-  const openCount = tickets?.filter((t) => isOpen(t.status)).length ?? 0;
+  const others = (tickets ?? []).filter((t) => t.number !== current?.number);
+  const openCount = tickets?.filter(isOpen).length ?? 0;
   const visibleOthers = showAll ? others : others.slice(0, 4);
+  const lastComment = current?.comments?.at(-1);
 
   return (
     <aside className="hidden w-[340px] shrink-0 flex-col border-l border-rule bg-paper xl:flex">
       <header className="flex h-16 shrink-0 flex-col justify-center gap-0.5 border-b border-rule px-5">
         <span className="text-[15.5px] font-semibold">Chamados de {first}</span>
-        <span className="text-[12.5px] text-ink-3">
-          {tickets ? `${openCount} abertos · ${tickets.length - openCount} encerrados` : "carregando…"}
-        </span>
+        <span className="text-[12.5px] text-ink-3">{tickets ? `${openCount} abertos · ${tickets.length - openCount} encerrados` : "carregando…"}</span>
       </header>
 
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-5 pt-6 pb-5">
@@ -76,11 +87,11 @@ export function TicketHistory({ employee, focusTicket, refreshKey }: { employee:
                   {current.overdue && " · prazo vencido"}
                 </span>
               </div>
-              {current.lastComment && (
+              {lastComment && (
                 <div className="flex items-start gap-2 border-t border-rule pt-3 text-[13.5px]">
                   <ArrowRightLeft size={15} className="mt-0.5 shrink-0 text-ink-3" />
-                  <span className="flex-1 text-ink-2">{current.lastComment.text}</span>
-                  <span className="text-[12.5px] text-ink-3">{formatTime(current.lastComment.at)}</span>
+                  <span className="flex-1 text-ink-2">{lastComment.body}</span>
+                  <span className="text-[12.5px] text-ink-3">{formatTime(lastComment.createdAt)}</span>
                 </div>
               )}
             </div>
@@ -98,7 +109,7 @@ export function TicketHistory({ employee, focusTicket, refreshKey }: { employee:
                   <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
                     <span className="truncate text-[14.5px] font-medium">{t.title}</span>
                     <span className="text-[12.5px] text-ink-3">
-                      {t.number} · {isOpen(t.status) ? t.statusLabel : `${t.statusLabel} em ${formatDate(t.resolvedAt ?? t.updatedAt)}`}
+                      {t.number} · {isOpen(t) ? t.statusLabel : `${t.statusLabel} em ${formatDate(t.resolvedAt ?? t.updatedAt)}`}
                     </span>
                   </span>
                   <ChevronRight size={16} className="text-ink-3 transition-transform group-open:rotate-90" />

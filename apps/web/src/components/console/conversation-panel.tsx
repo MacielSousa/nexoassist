@@ -2,18 +2,18 @@
 
 import { ArrowRightLeft, ArrowUp, Bot, CircleAlert, CircleCheckBig, Hand, Headset, LoaderCircle, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { MessagePart } from "@/agent/types";
-import { formatTime, formatWhen } from "@/domain";
-import type { User } from "@/server/auth";
-import type { ConversationSnapshot, MessageDTO } from "@/server/types";
+
+import { formatTime, formatWhen } from "@/lib/format";
+import type { ConversationSnapshot, Message, MessagePart, User } from "@/lib/types";
+
 import { DecisionPanel } from "../chat/decision-panel";
 import { mergeSnapshot, postJson, useLiveConversation } from "../chat/live";
-import { Avatar, cx, Pill } from "../ui";
+import { Avatar, avatarColors, cx, Pill } from "../ui";
 import { TicketHistory } from "./ticket-history";
 
 type Action = { action: "take" } | { action: "return" } | { action: "close" } | { action: "message"; text: string };
 
-export function ConversationPanel({ conversationId, analyst, onChange }: { conversationId: number; analyst: User; onChange: () => void }) {
+export function ConversationPanel({ conversationId, analyst, onChange }: { conversationId: string; analyst: User; onChange: () => void }) {
   const [snap, setSnap] = useState<ConversationSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`/api/console/conversations/${conversationId}`, { cache: "no-store" })
+    fetch(`/api/conversations/${conversationId}`, { cache: "no-store" })
       .then(async (r) => (r.ok ? setSnap((await r.json()) as ConversationSnapshot) : setError("Não foi possível abrir a conversa.")))
       .catch(() => setError("Não foi possível abrir a conversa."));
   }, [conversationId]);
@@ -51,7 +51,7 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
     setBusy(body.action);
     setError(null);
     try {
-      setSnap(mergeSnapshot(snap, await postJson<ConversationSnapshot>(`/api/console/conversations/${conversationId}`, body)));
+      setSnap(mergeSnapshot(snap, await postJson<ConversationSnapshot>(`/api/console/conversations/${conversationId}/${body.action === "message" ? "messages" : body.action}`, body.action === "message" ? { text: body.text } : undefined)));
       if (body.action === "message") setText("");
       onChange();
     } catch (err) {
@@ -65,7 +65,7 @@ export function ConversationPanel({ conversationId, analyst, onChange }: { conve
     <>
       <section className="flex min-w-0 flex-1 flex-col bg-console">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-rule bg-paper pr-4 pl-5">
-          <Avatar initials={c.employee.initials} bg={c.employee.avatarBg} fg={c.employee.avatarFg} size={40} />
+          <Avatar initials={c.employee.initials} {...avatarColors(c.employee.name)} size={40} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-[15.5px] font-semibold">{c.employee.name}</span>
             <span className="truncate text-[12.5px] text-ink-3">
@@ -226,7 +226,7 @@ function partSummary(p: MessagePart): string {
   }
 }
 
-function ConsoleMessage({ m, grouped }: { m: MessageDTO; grouped: boolean }) {
+function ConsoleMessage({ m, grouped }: { m: Message; grouped: boolean }) {
   const time = <span className="text-[11px] text-ink-3">{formatTime(m.createdAt)}</span>;
   if (m.role === "system") {
     return (

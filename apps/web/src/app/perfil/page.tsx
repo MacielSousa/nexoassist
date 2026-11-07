@@ -1,8 +1,8 @@
-import { Info, KeyRound, Lock } from "lucide-react";
+import { KeyRound, Lock } from "lucide-react";
 import { EmployeeShell } from "@/components/employee-shell";
-import { formatRelative } from "@/domain";
-import { requireUser } from "@/server/auth";
-import { ResetPassword } from "./reset-password";
+import { formatRelative } from "@/lib/format";
+import { requireUser } from "@/lib/api";
+import { ChangePasswordForm } from "./change-password-form";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function ProfilePage() {
             <Row label="Área">{user.department}</Row>
             <Row label="E-mail corporativo" last>
               <span className="flex flex-1 flex-wrap items-center justify-between gap-2">
-                {user.id}
+                {user.email}
                 <span className="flex items-center gap-[5px] text-[12.5px] font-normal text-ink-3">
                   <Lock size={13} /> Gerenciado pela TI
                 </span>
@@ -39,11 +39,8 @@ export default async function ProfilePage() {
                 <span className="text-[14.5px] font-semibold">Senha</span>
                 <span className="text-[13.5px] text-ink-3">Alterada {formatRelative(user.passwordChangedAt)}</span>
               </span>
-              <ResetPassword />
             </div>
-            <p className="flex items-center gap-2 border-t border-rule bg-desk px-6 py-3 text-[13px] text-ink-3">
-              <Info size={14} /> Enviaremos um link de redefinição para {user.id}.
-            </p>
+            <ChangePasswordForm />
           </section>
         </div>
       </div>

@@ -2,8 +2,8 @@
 
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
-import type { DraftView, MessagePart, TicketView } from "@/agent/types";
-import { AFFECTED_LABEL, formatDate, formatDateTime, formatRelative, formatWhen } from "@/domain";
+import { AFFECTED_LABEL, type Draft, type MessagePart, type TicketCard as TicketCardData } from "@/lib/types";
+import { formatDate, formatDateTime, formatRelative, formatWhen } from "@/lib/format";
 import { cx, Dot, PRIORITY_DOT, STATUS_DOT } from "../ui";
 
 const deadlineText = (iso: string) => `até ${formatWhen(iso)}`;
@@ -29,7 +29,7 @@ function Eyebrow({ kind, id, state }: { kind: string; id: string; state: React.R
   );
 }
 
-export function TicketCard({ ticket }: { ticket: TicketView }) {
+export function TicketCard({ ticket }: { ticket: TicketCardData }) {
   return (
     <div className="w-full max-w-[680px] overflow-hidden rounded-2xl border border-ink/9 bg-paper">
       <div className="flex flex-col gap-1.5 px-[18px] pt-4 pb-3.5">
@@ -64,7 +64,7 @@ export function TicketCard({ ticket }: { ticket: TicketView }) {
   );
 }
 
-const DRAFT_STATE: Record<DraftView["status"], { label: string; className: string; dot: string }> = {
+const DRAFT_STATE: Record<Draft["status"], { label: string; className: string; dot: string }> = {
   pending: { label: "Aguardando confirmação", className: "text-warning-text", dot: "bg-warning" },
   confirmed: { label: "Confirmado", className: "text-success-text", dot: "bg-success" },
   cancelled: { label: "Cancelado", className: "text-ink-3", dot: "bg-ink/25" },
@@ -79,7 +79,7 @@ export function DraftCard({
   onEdit,
   onCancel,
 }: {
-  draft: DraftView;
+  draft: Draft;
   interactive: boolean;
   onConfirm: () => Promise<void>;
   onEdit: () => void;
@@ -232,7 +232,7 @@ export function ArticleChips({ part }: { part: Extract<MessagePart, { kind: "art
     <div className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-3">
       <span>Central de ajuda:</span>
       {part.articles.map((a) => (
-        <span key={a.id} className="rounded-full bg-desk px-2.5 py-1 text-ink-2">
+        <span key={a.code} className="rounded-full bg-desk px-2.5 py-1 text-ink-2">
           {a.title}
         </span>
       ))}

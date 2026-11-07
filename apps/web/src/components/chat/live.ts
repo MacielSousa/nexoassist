@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ConversationSnapshot, MessageDTO } from "@/server/types";
+import type { ConversationSnapshot, Message } from "@/lib/types";
 
 /** Junta mensagens por id (as atualizações podem chegar repetidas ou fora de ordem). */
 export function mergeSnapshot(current: ConversationSnapshot, update: Partial<ConversationSnapshot>): ConversationSnapshot {
-  const byId = new Map<number, MessageDTO>(current.messages.map((m) => [m.id, m]));
+  const byId = new Map<number, Message>(current.messages.map((m) => [m.id, m]));
   for (const m of update.messages ?? []) byId.set(m.id, m);
   return {
     conversation: update.conversation ?? current.conversation,
@@ -16,7 +16,7 @@ export function mergeSnapshot(current: ConversationSnapshot, update: Partial<Con
 
 /** Assina as atualizações em tempo real de uma conversa (SSE com reconexão automática do navegador). */
 export function useLiveConversation(
-  conversationId: number | null,
+  conversationId: string | null,
   lastId: number,
   onUpdate: (update: Partial<ConversationSnapshot>) => void,
 ) {
@@ -62,7 +62,7 @@ export async function postJson<T>(url: string, body?: unknown): Promise<T> {
     headers: { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error ?? "Algo deu errado. Tente de novo.");
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string; message?: string };
+  if (!res.ok) throw new Error(data.message ?? data.error ?? "Algo deu errado. Tente de novo.");
   return data;
 }

@@ -1,4 +1,4 @@
-import type { Priority, TicketStatus } from "@/domain";
+import type { Priority, TicketStatus } from "@/lib/types";
 
 export function cx(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -20,6 +20,23 @@ export const PRIORITY_DOT: Record<Priority, string> = {
   Média: "bg-ink/40",
   Baixa: "bg-ink/20",
 };
+
+/** Paleta de avatares do protótipo; a cor é fixa por pessoa (derivada do nome). */
+const AVATAR_PALETTE = [
+  { bg: "#DCE9F7", fg: "#0062C4" },
+  { bg: "#F6E3D3", fg: "#9A4A12" },
+  { bg: "#E6E1F7", fg: "#5B3FC4" },
+  { bg: "#DDF0E6", fg: "#1E7A4C" },
+  { bg: "#F7E1E6", fg: "#A3324F" },
+  { bg: "#E5E8EC", fg: "#3D4656" },
+  { bg: "#FBEFD0", fg: "#8A6100" },
+];
+
+export function avatarColors(name: string) {
+  let hash = 0;
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]!;
+}
 
 export function Dot({ className, size = 6 }: { className: string; size?: number }) {
   return <span className={cx("inline-block shrink-0 rounded-full", className)} style={{ width: size, height: size }} />;

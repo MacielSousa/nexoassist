@@ -1,12 +1,11 @@
 import { Console } from "@/components/console/console";
-import { requireUser } from "@/server/auth";
-import { appDb } from "@/server/db";
-import { ConversationStore } from "@/server/conversations";
+import { apiFetch, requireUser } from "@/lib/api";
+import type { ConsoleItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConsolePage() {
-  const analyst = await requireUser("analyst");
-  const items = new ConversationStore(appDb()).list();
+  const analyst = await requireUser("analyst", "admin");
+  const items = await apiFetch<ConsoleItem[]>("/console/conversations");
   return <Console analyst={analyst} initialItems={items} />;
 }

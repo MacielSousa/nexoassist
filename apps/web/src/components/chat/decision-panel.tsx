@@ -2,7 +2,7 @@
 
 import { ChevronRight, CircleCheck, CircleX } from "lucide-react";
 import { useState } from "react";
-import type { TurnTrace } from "@/agent/types";
+import type { TurnTrace } from "@/lib/types";
 import { cx } from "../ui";
 
 /** Transparência: o que o agent entendeu, o que fez, com que segurança e a que custo. */

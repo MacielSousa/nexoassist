@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import { NexoMark } from "@/components/nexo-mark";
-import { currentUser } from "@/server/auth";
+import { currentUser, homeFor } from "@/lib/api";
 import { LoginForm } from "./login-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   const user = await currentUser();
-  if (user) redirect(user.role === "analyst" ? "/console" : "/chat");
+  if (user) redirect(homeFor(user.role));
 
   return (
     <main className="flex min-h-screen">

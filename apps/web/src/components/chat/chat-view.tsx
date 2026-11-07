@@ -2,9 +2,9 @@
 
 import { Check, CircleAlert, Headset, LoaderCircle, RotateCcw, SendHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MessagePart } from "@/agent/types";
-import type { User } from "@/server/auth";
-import { MESSAGE_LIMIT, type ChatStreamEvent, type ConversationSnapshot, type MessageDTO } from "@/server/types";
+
+import type { ChatStreamEvent, ConversationSnapshot, Message, MessagePart, User } from "@/lib/types";
+
 import { EmployeeShell } from "../employee-shell";
 import { Pill, TypingDots } from "../ui";
 import { ArticleChips, DraftCard, Options, TicketCard, TicketSelector } from "./cards";
@@ -29,7 +29,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
   const { conversation, messages, drafts } = snap;
   const lastId = messages.at(-1)?.id ?? 0;
   const agentActive = conversation.status === "agent";
-  const limitReached = conversation.userMessageCount >= MESSAGE_LIMIT;
+  const limitReached = conversation.userMessageCount >= conversation.messageLimit;
 
   useLiveConversation(conversation.id, lastId, (update) => {
     setSnap((s) => mergeSnapshot(s, update));
@@ -57,14 +57,14 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
       setInput("");
       setPending({ text: "", steps: [] });
       try {
-        const res = await fetch("/api/chat", {
+        const res = await fetch("/api/conversations/active/messages", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ text }),
         });
         if (!res.ok || !res.body) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data.error ?? "Não foi possível enviar.");
+          const data = (await res.json().catch(() => ({}))) as { message?: string };
+          throw new Error(data.message ?? "Não foi possível enviar.");
         }
         await readSse<ChatStreamEvent>(res, (e) => {
           switch (e.type) {
@@ -117,7 +117,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
 
   const newConversation = async () => {
     try {
-      setSnap(await postJson<ConversationSnapshot>("/api/chat/new"));
+      setSnap(await postJson<ConversationSnapshot>("/api/conversations"));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
@@ -194,7 +194,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
           )}
           {limitReached ? (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-rule bg-desk px-4 py-3 text-[13.5px]">
-              <span className="text-ink-2">Você chegou ao limite de {MESSAGE_LIMIT} mensagens nesta sessão.</span>
+              <span className="text-ink-2">Você chegou ao limite de {conversation.messageLimit} mensagens nesta sessão.</span>
               <button onClick={newConversation} className="flex items-center gap-1.5 rounded-lg bg-cta px-3 py-2 font-semibold text-white">
                 <RotateCcw size={14} /> Nova conversa
               </button>
@@ -230,7 +230,7 @@ export function ChatView({ user, initial }: { user: User; initial: ConversationS
           )}
           <div className="flex items-center justify-between pt-1.5 text-[12.5px] text-ink-3">
             <span>
-              {conversation.userMessageCount}/{MESSAGE_LIMIT} mensagens nesta sessão
+              {conversation.userMessageCount}/{conversation.messageLimit} mensagens nesta sessão
             </span>
             {agentActive && messages.length > 0 && !limitReached && (
               <button onClick={newConversation} className="hover:text-ink-2">
@@ -298,7 +298,7 @@ function Message({
   onDraft,
   onEditDraft,
 }: {
-  message: MessageDTO;
+  message: Message;
   interactive: boolean;
   drafts: ConversationSnapshot["drafts"];
   onPick: (text: string) => void;

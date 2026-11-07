@@ -1,26 +1,53 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { endSession, findUser, startSession } from "@/server/auth";
+import { homeFor } from "@/lib/api";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE, API_URL, cookieOptions, REFRESH_COOKIE, REFRESH_MAX_AGE } from "@/lib/session";
+import type { User } from "@/lib/types";
 
 export interface LoginState {
   error?: string;
   email?: string;
 }
 
-// Protótipo: aceita qualquer senha para os funcionários dos dados de exemplo (PRD, tela 1).
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
-  if (!/^[^@\s]+@nexo\.com\.br$/.test(email)) return { error: "Use seu e-mail corporativo (@nexo.com.br).", email };
-  if (!password) return { error: "Informe a senha.", email };
-  const user = findUser(email);
-  if (!user) return { error: "Não encontramos esse e-mail. Confira ou use uma das contas de demonstração.", email };
-  await startSession(user.id, form.get("remember") === "on");
-  redirect(user.role === "analyst" ? "/console" : "/chat");
+  if (!email || !password) return { error: "Informe e-mail e senha.", email };
+
+  const res = await fetch(`${API_URL}/sessions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  }).catch(() => null);
+  if (!res) return { error: "Não foi possível falar com o servidor. Tente de novo em instantes.", email };
+
+  const data = (await res.json().catch(() => ({}))) as { token?: string; refreshToken?: string; user?: User; message?: string };
+  if (!res.ok || !data.token || !data.refreshToken || !data.user) {
+    return { error: data.message ?? "Não foi possível entrar.", email };
+  }
+
+  const remember = form.get("remember") === "on";
+  const jar = await cookies();
+  jar.set(ACCESS_COOKIE, data.token, cookieOptions(ACCESS_MAX_AGE));
+  // Sem "manter conectado", o refresh token dura só a sessão do navegador.
+  const refreshOptions = cookieOptions(REFRESH_MAX_AGE);
+  jar.set(REFRESH_COOKIE, data.refreshToken, remember ? refreshOptions : { ...refreshOptions, maxAge: undefined });
+  redirect(homeFor(data.user.role));
 }
 
 export async function logout() {
-  await endSession();
+  const jar = await cookies();
+  const refreshToken = jar.get(REFRESH_COOKIE)?.value;
+  if (refreshToken) {
+    await fetch(`${API_URL}/sessions/logout`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    }).catch(() => undefined);
+  }
+  jar.delete(ACCESS_COOKIE);
+  jar.delete(REFRESH_COOKIE);
   redirect("/login");
 }
