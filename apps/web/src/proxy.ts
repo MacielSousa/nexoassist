@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ACCESS_COOKIE, ACCESS_MAX_AGE, API_URL, cookieOptions, REFRESH_COOKIE, REFRESH_MAX_AGE, tokenExpiresAt } from "@/lib/session";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE, API_URL, cookieOptions, forwardedFor, REFRESH_COOKIE, REFRESH_MAX_AGE, tokenExpiresAt } from "@/lib/session";
 
 /**
  * Antes de cada página ou chamada /api: se o token de acesso venceu (ou vai vencer),
@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
 
   const res = await fetch(`${API_URL}/sessions/refresh`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...forwardedFor(request.headers) },
     body: JSON.stringify({ refreshToken: refresh }),
   }).catch(() => null);
 

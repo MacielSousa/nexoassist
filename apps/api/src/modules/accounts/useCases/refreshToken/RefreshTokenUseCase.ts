@@ -1,4 +1,5 @@
 import { inject, injectable } from "tsyringe";
+import { hashToken } from "@modules/accounts/utils/tokens";
 import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepository";
 import type { IUsersTokensRepository } from "@modules/accounts/repositories/IUsersTokensRepository";
 import { issueSessionTokens, type ISessionTokens } from "@modules/accounts/utils/tokens";
@@ -13,7 +14,7 @@ export class RefreshTokenUseCase {
   ) {}
 
   async execute(refreshToken: string): Promise<ISessionTokens> {
-    const stored = await this.usersTokensRepository.findByRefreshToken(refreshToken);
+    const stored = await this.usersTokensRepository.findByRefreshToken(hashToken(refreshToken));
     if (!stored || stored.expiresAt < new Date()) throw new AppError("Sessão expirada. Entre novamente.", 401);
 
     await this.usersTokensRepository.deleteById(stored.id);

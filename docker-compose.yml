@@ -68,6 +68,8 @@ services:
       API_URL: http://api:3333
       # Acesso por http://localhost: cookies sem a flag Secure.
       INSECURE_COOKIES: "true"
+      # Mostra as contas de demonstração na tela de login (desligue em produção real).
+      DEMO_MODE: "true"
     ports:
       - "3000:3000"
     depends_on:

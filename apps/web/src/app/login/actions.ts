@@ -1,9 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers as incomingHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 import { homeFor } from "@/lib/api";
-import { ACCESS_COOKIE, ACCESS_MAX_AGE, API_URL, cookieOptions, REFRESH_COOKIE, REFRESH_MAX_AGE } from "@/lib/session";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE, API_URL, cookieOptions, forwardedFor, REFRESH_COOKIE, REFRESH_MAX_AGE } from "@/lib/session";
 import type { User } from "@/lib/types";
 
 export interface LoginState {
@@ -18,7 +18,8 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
 
   const res = await fetch(`${API_URL}/sessions`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    // O IP de quem tenta entrar: o limite de tentativas é por pessoa, não pelo servidor do Next.
+    headers: { "content-type": "application/json", ...forwardedFor(await incomingHeaders()) },
     body: JSON.stringify({ email, password }),
   }).catch(() => null);
   if (!res) return { error: "Não foi possível falar com o servidor. Tente de novo em instantes.", email };

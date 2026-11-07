@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
+import { cookies, headers as incomingHeaders } from "next/headers";
 import { redirect } from "next/navigation";
-import { ACCESS_COOKIE, API_URL } from "./session";
+import { ACCESS_COOKIE, API_URL, forwardedFor } from "./session";
 import { can, type Permission, type User } from "./types";
 
 // Chamadas à API feitas pelo servidor do Next (páginas e server actions).
@@ -20,6 +20,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     ...init,
     headers: {
       "content-type": "application/json",
+      ...forwardedFor(await incomingHeaders()),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...init.headers,
     },

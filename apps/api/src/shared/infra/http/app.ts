@@ -7,12 +7,14 @@ import "@shared/container";
 import { openApiDocument } from "./docs/openapi";
 import { errorHandler } from "./middlewares/errorHandler";
 import { rateLimiter } from "./middlewares/rateLimiter";
+import { securityHeaders } from "./middlewares/securityHeaders";
 import { router } from "./routes";
 
 export const app = express();
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+app.use(securityHeaders);
 
 app.get("/health", (_request, response) => {
   response.json({ status: "ok" });

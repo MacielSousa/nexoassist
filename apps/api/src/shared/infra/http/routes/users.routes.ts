@@ -7,6 +7,7 @@ import { ProfileUserController } from "@modules/accounts/useCases/profileUser/Pr
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/UpdateUserController";
 import { FilesController } from "@modules/files/useCases/FilesController";
 import { defineRoute } from "../defineRoute";
+import { passwordCheckLimiter } from "../middlewares/rateLimiter";
 import { uploadSingleFile } from "../middlewares/uploadSingleFile";
 
 export const usersRoutes = Router();
@@ -31,6 +32,7 @@ defineRoute(usersRoutes, "/users", {
   description: "Trocar o e-mail exige a senha atual (currentPassword) e encerra as outras sessões.",
   auth: "any",
   request: { body: ProfileUserController.updateProfileBody },
+  middlewares: [passwordCheckLimiter],
   responses: { 200: { description: "Usuário atualizado", schema: UserResponseSchema } },
   handler: profile.update,
 });
@@ -67,6 +69,7 @@ defineRoute(usersRoutes, "/users", {
   description: "Encerra as outras sessões abertas.",
   auth: "any",
   request: { body: ProfileUserController.changePasswordBody },
+  middlewares: [passwordCheckLimiter],
   responses: { 204: { description: "Senha alterada" } },
   handler: profile.changePassword,
 });

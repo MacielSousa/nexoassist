@@ -15,6 +15,9 @@ interface IResponse extends ISessionTokens {
   user: IUserResponseDTO;
 }
 
+/** Hash de uma senha qualquer, comparado quando o e-mail não existe (mesmo custo de bcrypt). */
+let dummyHash: Promise<string> | undefined;
+
 @injectable()
 export class AuthenticateUserUseCase {
   constructor(
@@ -25,8 +28,9 @@ export class AuthenticateUserUseCase {
 
   async execute({ email, password }: IRequest): Promise<IResponse> {
     const user = await this.usersRepository.findByEmail(email);
-    // Mesma mensagem para e-mail ou senha errados: não revela quais e-mails existem.
-    const valid = user && (await this.hashProvider.compareHash(password, user.password));
+    // Mesma mensagem e mesmo tempo para e-mail ou senha errados: não revela quais e-mails existem.
+    dummyHash ??= this.hashProvider.generateHash("nexo-dummy-password");
+    const valid = await this.hashProvider.compareHash(password, user?.password ?? (await dummyHash));
     if (!user || !valid) throw new AppError("E-mail ou senha incorretos.", 401);
     if (!user.active) throw new AppError("Usuário desativado. Procure a TI.", 403);
 

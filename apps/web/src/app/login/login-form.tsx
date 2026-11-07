@@ -11,7 +11,7 @@ const DEMO = [
   { email: "admin@nexo.com.br", label: "Admin" },
 ];
 
-export function LoginForm() {
+export function LoginForm({ showDemo }: { showDemo: boolean }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
@@ -92,6 +92,7 @@ export function LoginForm() {
         {!pending && <ArrowRight size={16} />}
       </button>
 
+      {showDemo && (
       <div className="flex flex-col gap-2 border-t border-rule pt-4 text-[12.5px] text-ink-3">
         <span>Contas de demonstração (senha do seed: nexo1234):</span>
         <div className="flex flex-wrap gap-1.5">
@@ -107,6 +108,7 @@ export function LoginForm() {
           ))}
         </div>
       </div>
+      )}
     </form>
   );
 }

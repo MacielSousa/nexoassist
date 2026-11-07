@@ -14,6 +14,16 @@ export const cookieOptions = (maxAgeSeconds: number) => ({
   maxAge: maxAgeSeconds,
 });
 
+/**
+ * IP de quem fez a requisição, para a API aplicar os limites por pessoa e não pelo
+ * servidor do Next. Usa o último valor do X-Forwarded-For (o salto que conectou no Next;
+ * os anteriores podem ter sido forjados pelo cliente).
+ */
+export function forwardedFor(incoming: Headers): Record<string, string> {
+  const ip = incoming.get("x-forwarded-for")?.split(",").pop()?.trim();
+  return ip ? { "x-forwarded-for": ip } : {};
+}
+
 export const ACCESS_MAX_AGE = 15 * 60;
 export const REFRESH_MAX_AGE = 30 * 24 * 60 * 60;
 

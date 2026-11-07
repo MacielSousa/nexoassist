@@ -5,6 +5,8 @@ import { UsersRepositoryInMemory } from "@modules/accounts/repositories/in-memor
 import { UsersTokensRepositoryInMemory } from "@modules/accounts/repositories/in-memory/UsersTokensRepositoryInMemory";
 import { FakeHashProvider } from "@shared/container/providers/HashProvider/in-memory/FakeHashProvider";
 import { AppError } from "@shared/errors/AppError";
+import { rateLimiter } from "@shared/infra/http/middlewares/rateLimiter";
+import { hashToken } from "../utils/tokens";
 import { AuthenticateUserUseCase } from "./authenticateUser/AuthenticateUserUseCase";
 import { CreateUserUseCase } from "./createUser/CreateUserUseCase";
 import { RefreshTokenUseCase } from "./refreshToken/RefreshTokenUseCase";
@@ -59,6 +61,32 @@ describe("Autenticação", () => {
     const refresh = new RefreshTokenUseCase(users, tokens);
     expect((await refresh.execute(session.refreshToken)).refreshToken).not.toBe(session.refreshToken);
     await expect(refresh.execute(session.refreshToken)).rejects.toBeInstanceOf(AppError);
+  });
+
+  it("o banco guarda só o hash do refresh token", async () => {
+    await createUser.execute({ ...employeeData(), actor: admin });
+    const session = await new AuthenticateUserUseCase(users, tokens, hash).execute({ email: "ana.souza@nexo.com.br", password: "senha-forte" });
+    const stored = tokens.tokens.at(-1)!.refreshToken;
+    expect(stored).not.toBe(session.refreshToken);
+    expect(stored).toBe(hashToken(session.refreshToken));
+  });
+
+  it("e-mail inexistente também passa pela comparação de senha (sem atalho de tempo)", async () => {
+    let comparisons = 0;
+    const counting = Object.assign(Object.create(hash), { compareHash: (p: string, h: string) => (comparisons++, hash.compareHash(p, h)) });
+    await expect(new AuthenticateUserUseCase(users, tokens, counting).execute({ email: "ninguem@nexo.com.br", password: "x" })).rejects.toMatchObject({ statusCode: 401 });
+    expect(comparisons).toBe(1);
+  });
+});
+
+describe("Limite de tentativas", () => {
+  it("bloqueia com 429 depois do máximo, por chave", () => {
+    const limiter = rateLimiter({ windowMs: 60_000, max: 2, key: (r) => String(r.body.email) });
+    const call = (email: string) => limiter({ body: { email } } as never, { setHeader: () => undefined } as never, () => undefined);
+    call("a");
+    call("a");
+    expect(() => call("a")).toThrow(expect.objectContaining({ statusCode: 429 }));
+    expect(() => call("b")).not.toThrow();
   });
 });
 

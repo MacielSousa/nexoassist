@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AuthenticateUserController } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserController";
 import { RefreshTokenController } from "@modules/accounts/useCases/refreshToken/RefreshTokenController";
 import { defineRoute } from "../defineRoute";
+import { loginLimiters } from "../middlewares/rateLimiter";
 
 export const sessionsRoutes = Router();
 
@@ -14,7 +15,9 @@ defineRoute(sessionsRoutes, "/sessions", {
   tag: "Sessões",
   summary: "Entrar com e-mail e senha",
   auth: false,
+  description: "Limitado a 10 tentativas por e-mail a cada 15 minutos (429 depois disso).",
   request: { body: AuthenticateUserController.body },
+  middlewares: process.env.NODE_ENV === "test" ? [] : loginLimiters,
   responses: { 200: { description: "Tokens e dados do usuário", schema: AuthenticateUserController.response } },
   handler: authenticate.handle,
 });

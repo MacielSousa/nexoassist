@@ -7,20 +7,20 @@ import type { IUsersRepository } from "@modules/accounts/repositories/IUsersRepo
 import { AppError } from "@shared/errors/AppError";
 
 /**
- * Exige um JWT válido no header Authorization (Bearer) ou, para SSE (EventSource
- * não envia headers), no parâmetro ?access_token=.
+ * Exige um JWT válido no header Authorization (Bearer). Nunca na URL: URLs acabam em logs
+ * e históricos. (O SSE passa pelo proxy do web, que põe o header a partir do cookie.)
  *
  * As permissões são lidas do banco a cada requisição (não ficam no token): mudar a role
  * ou desativar um usuário vale na hora, sem esperar o token expirar.
  */
 export async function ensureAuthenticated(request: Request, _response: Response, next: NextFunction) {
   const header = request.headers.authorization;
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : (request.query.access_token as string | undefined);
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
   if (!token) throw new AppError("Token ausente.", 401);
 
   let userId: string;
   try {
-    userId = (verify(token, authConfig.secret) as { sub: string }).sub;
+    userId = (verify(token, authConfig.secret, { algorithms: ["HS256"] }) as { sub: string }).sub;
   } catch {
     throw new AppError("Token inválido ou expirado.", 401);
   }

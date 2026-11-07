@@ -5,6 +5,9 @@ import { LoginForm } from "./login-form";
 
 export const dynamic = "force-dynamic";
 
+/** Atalhos das contas do seed: só em desenvolvimento ou com DEMO_MODE=true (avaliação). */
+const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.DEMO_MODE === "true";
+
 export default async function LoginPage() {
   const user = await currentUser();
   if (user) redirect(homeFor(user));
@@ -18,7 +21,7 @@ export default async function LoginPage() {
           <span className="font-semibold text-primary-text">Ligue no ramal 4000</span>
         </div>
         <div className="flex flex-1 items-center justify-center py-10">
-          <LoginForm />
+          <LoginForm showDemo={SHOW_DEMO} />
         </div>
         <footer className="flex justify-between text-[12.5px] text-ink-3">
           <span>© 2026 Nexo · Service desk de TI</span>
